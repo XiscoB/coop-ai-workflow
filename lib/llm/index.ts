@@ -129,7 +129,14 @@ function withFallback(
     type: primary.type,
     label: `${primary.label} + respaldo (${config.llmFallbackModel})`,
     model: primary.model,
-    raw: (system, prompt) => primary.raw(system, prompt),
+    async raw(system, prompt) {
+      // La sonda también debe reflejar la resiliencia real del sistema.
+      try {
+        return await primary.raw(system, prompt);
+      } catch {
+        return secondary.raw(system, prompt);
+      }
+    },
     async complete(system, prompt, options) {
       try {
         return await primary.complete(system, prompt, {

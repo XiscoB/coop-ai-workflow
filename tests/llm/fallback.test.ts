@@ -90,4 +90,18 @@ describe("proveedor con API de respaldo", () => {
     const detection = await detectProvider(config(), fetchMock);
     expect(detection.provider?.label).not.toContain("respaldo");
   });
+
+  it("la sonda (raw) también cae al respaldo si el primario falla", async () => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+      if (String(url).includes("primario.example")) {
+        return new Response("boom", { status: 500 });
+      }
+      return jsonResponse({
+        choices: [{ message: { content: '{"ok": true}' } }],
+      });
+    });
+    const detection = await detectProvider(config(withFallback), fetchMock);
+    const raw = await detection.provider!.raw("", "probe");
+    expect(raw).toBe('{"ok": true}');
+  });
 });
