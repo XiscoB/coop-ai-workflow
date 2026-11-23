@@ -1,7 +1,7 @@
 # Plan de entrega
 
-Estado: **implementado y validado** (local + Neon en la nube, 2026-11-23);
-despliegue en Vercel en curso.
+Estado: **entregado** (2026-11-23). App desplegada en
+[coop-ai-workflow.vercel.app](https://coop-ai-workflow.vercel.app).
 
 ## Decisiones técnicas
 
@@ -30,7 +30,7 @@ siguieron el mismo flujo como specs 002, 003 y 004 (`specs/`).
 
 ## Checklist de entregables
 
-- [ ] App desplegada en Vercel con URL pública
+- [x] App desplegada en Vercel: [coop-ai-workflow.vercel.app](https://coop-ai-workflow.vercel.app) (validada en producción)
 - [x] Repositorio público en GitHub: [XiscoB/coop-ai-workflow](https://github.com/XiscoB/coop-ai-workflow)
 - [x] Usuario y contraseña de prueba (login compartido; se entrega junto a la URL)
 - [x] Respuestas a las 4 preguntas cortas (redactadas abajo)
@@ -47,7 +47,8 @@ siguieron el mismo flujo como specs 002, 003 y 004 (`specs/`).
 - [x] Bucle completo en vivo (Ollama + Postgres): «Añade una página de contacto» → tareas completadas, informe final y `contacto.html` enlazada desde `index.html`
 - [x] Validación completa contra Neon en la nube (stack idéntico a producción): ejecución E2E 6/6 tareas, `/site/contacto.html` servido desde Neon, historial OK
 - [x] Seguridad: rate limit de login (429 al 6º intento), key de API siempre enmascarada, CSP sobre el sandbox, headers de seguridad
-- [ ] V7 despliegue en Vercel (en curso)
+- [x] V7 producción: app desplegada y validada en Vercel (login, ejecución E2E con LLM API, historial, preview, reset, badge de proveedor, logs)
+- [x] Resiliencia LLM en producción: retry con Retry-After, pacing dinámico, fallback automático entre proveedores (verificado en el timeline de ejecuciones reales)
 
 ## Las 4 preguntas cortas
 
