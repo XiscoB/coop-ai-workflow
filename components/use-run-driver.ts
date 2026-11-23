@@ -65,7 +65,6 @@ export function useRunDriver(runId: string): RunDriver {
   const [busyWait, setBusyWait] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [driveNonce, setDriveNonce] = useState(0);
-  const stopped = useRef(false);
   const prevStatus = useRef<string | null>(null);
 
   /** Notifica (campana + TTS) la transición a estado terminal (FR-006). */
@@ -107,16 +106,21 @@ export function useRunDriver(runId: string): RunDriver {
   }, [runId]);
 
   useEffect(() => {
-    stopped.current = false;
+    // `cancelled` es local a cada instancia del efecto: al reanudar (nonce)
+    // o desmontar, el bucle viejo no puede revivir ni competir por el
+    // cerrojo de avance (bug del RUN_BUSY en una sola pestaña).
+    let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     async function drive() {
+      if (cancelled) return;
       const current = await load();
-      if (!current || stopped.current) return;
+      if (!current || cancelled) return;
       if (TERMINAL_STATUSES.has(current.run.status)) return;
 
       try {
         const res = await fetch(`/api/runs/${runId}/advance`, { method: "POST" });
+        if (cancelled) return;
         const data = await res.json();
         if (res.status === 503) {
           setPaused(data.error ?? "Sin servicio de IA disponible.");
@@ -141,13 +145,13 @@ export function useRunDriver(runId: string): RunDriver {
         }
         setPaused(data.error ?? "Error avanzando la ejecución.");
       } catch {
-        setPaused("Error de conexión con el servidor.");
+        if (!cancelled) setPaused("Error de conexión con el servidor.");
       }
     }
 
     drive();
     return () => {
-      stopped.current = true;
+      cancelled = true;
       if (timer) clearTimeout(timer);
     };
   }, [load, runId, driveNonce, notifyIfTerminal]);
