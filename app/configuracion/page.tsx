@@ -13,6 +13,9 @@ interface ConfigResponse {
     llm_api_model: string;
     llm_api_key: string;
     llm_min_interval_seconds: string;
+    llm_fallback_base_url: string;
+    llm_fallback_model: string;
+    llm_fallback_key: string;
     tts_enabled: boolean;
   };
   detection: { type: string; label: string } | null;
@@ -39,6 +42,9 @@ export default function ConfiguracionPage() {
     llm_api_model: "",
     llm_api_key: "",
     llm_min_interval_seconds: "",
+    llm_fallback_base_url: "",
+    llm_fallback_model: "",
+    llm_fallback_key: "",
     tts_enabled: true,
   });
   const [saving, setSaving] = useState(false);
@@ -62,6 +68,9 @@ export default function ConfiguracionPage() {
           llm_api_model: cfg.settings.llm_api_model,
           llm_api_key: cfg.settings.llm_api_key,
           llm_min_interval_seconds: cfg.settings.llm_min_interval_seconds,
+          llm_fallback_base_url: cfg.settings.llm_fallback_base_url,
+          llm_fallback_model: cfg.settings.llm_fallback_model,
+          llm_fallback_key: cfg.settings.llm_fallback_key,
           tts_enabled: cfg.settings.tts_enabled,
         });
         setPrompts(pr.prompts);
@@ -243,6 +252,55 @@ export default function ConfiguracionPage() {
               }
               placeholder="0"
               className="w-32 rounded border border-stone-300 px-3 py-2 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
+            />
+          </label>
+        </fieldset>
+
+        <fieldset className="space-y-3 rounded border border-stone-200 p-3 dark:border-stone-700">
+          <legend className="px-1 text-sm font-medium text-stone-600 dark:text-stone-400">
+            API de respaldo (opcional)
+          </legend>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
+            Si la principal falla (rate limit, caída o error), la llamada salta
+            automáticamente a este segundo proveedor.
+          </p>
+          <label className="block text-sm dark:text-stone-200">
+            <span className="mb-1 block font-medium">URL de la API</span>
+            <input
+              type="text"
+              value={form.llm_fallback_base_url}
+              onChange={(e) =>
+                setForm({ ...form, llm_fallback_base_url: e.target.value })
+              }
+              placeholder="https://api.groq.com/openai/v1"
+              className="w-full rounded border border-stone-300 px-3 py-2 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
+            />
+          </label>
+          <label className="block text-sm dark:text-stone-200">
+            <span className="mb-1 block font-medium">Modelo</span>
+            <input
+              type="text"
+              value={form.llm_fallback_model}
+              onChange={(e) =>
+                setForm({ ...form, llm_fallback_model: e.target.value })
+              }
+              placeholder="openai/gpt-oss-20b"
+              className="w-72 rounded border border-stone-300 px-3 py-2 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
+            />
+          </label>
+          <label className="block text-sm dark:text-stone-200">
+            <span className="mb-1 block font-medium">
+              API key del respaldo (mismo tratamiento: solo servidor)
+            </span>
+            <input
+              type="password"
+              value={form.llm_fallback_key}
+              onChange={(e) =>
+                setForm({ ...form, llm_fallback_key: e.target.value })
+              }
+              placeholder="••••"
+              autoComplete="off"
+              className="w-full rounded border border-stone-300 px-3 py-2 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
             />
           </label>
         </fieldset>

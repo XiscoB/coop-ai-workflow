@@ -8,6 +8,9 @@ export interface AppConfig {
   llmApiModel: string;
   llmApiKey: string;
   llmMinIntervalSeconds: number;
+  llmFallbackBaseUrl: string;
+  llmFallbackModel: string;
+  llmFallbackKey: string;
   agentModels: {
     orchestrator?: string;
     develop?: string;
@@ -30,6 +33,9 @@ export function getConfig(): AppConfig {
     llmApiModel: process.env.LLM_API_MODEL ?? "",
     llmApiKey: process.env.LLM_API_KEY ?? "",
     llmMinIntervalSeconds: Number(process.env.LLM_MIN_INTERVAL_SECONDS) || 0,
+    llmFallbackBaseUrl: process.env.LLM_FALLBACK_BASE_URL ?? "",
+    llmFallbackModel: process.env.LLM_FALLBACK_MODEL ?? "",
+    llmFallbackKey: process.env.LLM_FALLBACK_KEY ?? "",
     agentModels: {
       orchestrator: process.env.ORCHESTRATOR_MODEL || undefined,
       develop: process.env.DEVELOP_MODEL || undefined,
@@ -55,6 +61,9 @@ const SETTING_TO_ENV = {
   llm_api_model: "llmApiModel",
   llm_api_key: "llmApiKey",
   llm_min_interval_seconds: "llmMinIntervalSeconds",
+  llm_fallback_base_url: "llmFallbackBaseUrl",
+  llm_fallback_model: "llmFallbackModel",
+  llm_fallback_key: "llmFallbackKey",
 } as const;
 
 /**

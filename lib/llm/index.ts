@@ -85,6 +85,65 @@ function apiProvider(
   );
 }
 
+export type SwitchHook = (fromLabel: string, toLabel: string) => void;
+
+let fallbackHook: SwitchHook | null = null;
+
+/** Hook de cambio a respaldo: la ruta advance lo fija por ejecución. */
+export function setFallbackHook(hook: SwitchHook | null): void {
+  fallbackHook = hook;
+}
+
+/**
+ * Envuelve el proveedor API con un respaldo (spec: capa en caso de fallo):
+ * el primario tiene 2 intentos; si agota, la llamada pasa al respaldo con
+ * sus reintentos completos. El cambio queda registrado vía hook.
+ */
+function withFallback(
+  primary: LLMProvider,
+  config: AppConfig,
+  fetchImpl: FetchLike = fetch,
+): LLMProvider {
+  if (
+    !config.llmFallbackBaseUrl ||
+    !config.llmFallbackModel ||
+    !config.llmFallbackKey
+  ) {
+    return primary;
+  }
+  const client = new OpenAiCompatibleClient(
+    config.llmFallbackBaseUrl,
+    config.llmFallbackModel,
+    config.llmFallbackKey,
+    fetchImpl,
+    config.llmMinIntervalSeconds,
+  );
+  const secondary = makeProvider(
+    "openai_compatible",
+    `API de respaldo (${config.llmFallbackModel})`,
+    config.llmFallbackModel,
+    (system, prompt) => Promise.resolve(client.call(system, prompt)),
+  );
+
+  return {
+    type: primary.type,
+    label: `${primary.label} + respaldo (${config.llmFallbackModel})`,
+    model: primary.model,
+    raw: (system, prompt) => primary.raw(system, prompt),
+    async complete(system, prompt, options) {
+      try {
+        return await primary.complete(system, prompt, {
+          ...options,
+          maxAttempts: 2,
+        });
+      } catch (error) {
+        fallbackHook?.(primary.label, secondary.label);
+        return secondary.complete(system, prompt, options);
+      }
+    },
+  };
+}
+
 async function ollamaResponds(
   baseUrl: string,
   fetchImpl: FetchLike = fetch,
@@ -124,7 +183,11 @@ export async function detectProvider(
 
   if (mode === "api") {
     if (apiConfigured(config)) {
-      return { mode, provider: apiProvider(config, fetchImpl), warning: null };
+      return {
+        mode,
+        provider: withFallback(apiProvider(config, fetchImpl), config, fetchImpl),
+        warning: null,
+      };
     }
     return {
       mode,
@@ -140,7 +203,11 @@ export async function detectProvider(
     return { mode, provider: ollamaProvider(config, fetchImpl), warning: null };
   }
   if (apiConfigured(config)) {
-    return { mode, provider: apiProvider(config, fetchImpl), warning: null };
+    return {
+      mode,
+      provider: withFallback(apiProvider(config, fetchImpl), config, fetchImpl),
+      warning: null,
+    };
   }
   return {
     mode,

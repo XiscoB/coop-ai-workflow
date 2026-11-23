@@ -27,6 +27,9 @@ export async function GET() {
       llm_api_model: config.llmApiModel,
       llm_api_key: maskKey(config.llmApiKey),
       llm_min_interval_seconds: String(config.llmMinIntervalSeconds || ""),
+      llm_fallback_base_url: config.llmFallbackBaseUrl,
+      llm_fallback_model: config.llmFallbackModel,
+      llm_fallback_key: maskKey(config.llmFallbackKey),
       tts_enabled: ttsEnabled,
     },
     detection: detection.provider
@@ -55,6 +58,8 @@ export async function POST(request: Request) {
     "llm_api_base_url",
     "llm_api_model",
     "llm_min_interval_seconds",
+    "llm_fallback_base_url",
+    "llm_fallback_model",
     "tts_enabled",
   ];
   for (const key of allowed) {
@@ -62,11 +67,18 @@ export async function POST(request: Request) {
       await store.setSetting(key, body[key]);
     }
   }
-  // La key solo se guarda si viene una nueva completa: vacía o enmascarada
-  // (••••…) significa «conservar la actual». Jamás se devuelve al cliente.
-  const newKey = body.llm_api_key;
-  if (typeof newKey === "string" && newKey !== "" && !newKey.startsWith("••••")) {
-    await store.setSetting("llm_api_key", newKey);
+  // Las keys solo se guardan si vienen nuevas completas: vacías o
+  // enmascaradas (••••…) significa «conservar la actual». Jamás se devuelven
+  // al cliente.
+  for (const keyName of ["llm_api_key", "llm_fallback_key"] as const) {
+    const newKey = body[keyName];
+    if (
+      typeof newKey === "string" &&
+      newKey !== "" &&
+      !newKey.startsWith("••••")
+    ) {
+      await store.setSetting(keyName, newKey);
+    }
   }
 
   return GET();

@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/db/store";
 import { advance, isTerminal } from "@/lib/engine/runner";
-import { detectProvider, providerForRole, type AgentRole } from "@/lib/llm";
+import {
+  detectProvider,
+  providerForRole,
+  setFallbackHook,
+  type AgentRole,
+} from "@/lib/llm";
 import { setRateLimitHook } from "@/lib/llm/openai-compatible";
 import { getEffectiveConfig } from "@/lib/config";
 
@@ -71,6 +76,17 @@ export async function POST(_request: Request, { params }: Params) {
       })
       .catch(() => {});
   });
+  // Y el cambio al proveedor de respaldo, si lo hay.
+  setFallbackHook((fromLabel, toLabel) => {
+    void store
+      .addActivity({
+        runId: id,
+        agent: "system",
+        kind: "status_change",
+        content: `El proveedor principal falló; se cambia automáticamente al respaldo (${toLabel}).`,
+      })
+      .catch(() => {});
+  });
 
   try {
     const run = await advance({ store, resolveProvider }, id);
@@ -83,6 +99,7 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ run, tasks, activities });
   } finally {
     setRateLimitHook(null);
+    setFallbackHook(null);
     await store.releaseRunLock(id);
   }
 }

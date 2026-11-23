@@ -3,6 +3,8 @@ export class LLMError extends Error {}
 export interface CompleteOptions {
   temperature?: number;
   requiredKeys?: string[];
+  /** Tope de intentos en ESTE proveedor (defecto: 3; con 429, hasta 6). */
+  maxAttempts?: number;
 }
 
 export type RawCall = (temperature: number) => Promise<string>;
@@ -37,11 +39,14 @@ export async function completeWithRetries(
 ): Promise<Record<string, unknown>> {
   const temperature = options.temperature ?? 0.1;
   const required = options.requiredKeys ?? [];
+  const baseMax = options.maxAttempts ?? BACKOFF_SECONDS.length;
   let lastError: unknown = null;
   let saw429 = false;
 
   for (let attempt = 0; ; attempt++) {
-    const maxAttempts = saw429 ? MAX_ATTEMPTS_429 : BACKOFF_SECONDS.length;
+    const maxAttempts = saw429
+      ? Math.max(baseMax, MAX_ATTEMPTS_429)
+      : baseMax;
     if (attempt >= maxAttempts) break;
     try {
       const raw = await call(temperature);
@@ -58,7 +63,9 @@ export async function completeWithRetries(
       const retryAfter = (error as { retryAfterSeconds?: number })
         .retryAfterSeconds;
       if (retryAfter !== undefined) saw429 = true;
-      const maxAttempts = saw429 ? MAX_ATTEMPTS_429 : BACKOFF_SECONDS.length;
+      const maxAttempts = saw429
+        ? Math.max(baseMax, MAX_ATTEMPTS_429)
+        : baseMax;
       if (attempt < maxAttempts - 1) {
         // Si el proveedor pide una espera concreta (429 Retry-After), se
         // respeta (tope 45 s); si no, backoff fijo 2/5/10 s.
@@ -72,6 +79,8 @@ export async function completeWithRetries(
   }
 
   const reason = lastError instanceof Error ? lastError.message : String(lastError);
-  const attempts = saw429 ? MAX_ATTEMPTS_429 : BACKOFF_SECONDS.length;
+  const attempts = saw429
+    ? Math.max(baseMax, MAX_ATTEMPTS_429)
+    : baseMax;
   throw new LLMError(`el LLM falló tras ${attempts} intentos: ${reason}`);
 }
