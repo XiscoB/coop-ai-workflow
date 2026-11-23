@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { getDb } from "./client";
 import { activities, runs, sandboxFiles, tasks } from "./schema";
 import type { NewActivity, NewTask, SeedFile, Store } from "@/lib/store";
@@ -46,6 +46,23 @@ export function createDrizzleStore(): Store {
         .from(runs)
         .orderBy(desc(runs.createdAt), desc(runs.id))
         .limit(limit);
+    },
+
+    async acquireRunLock(id, ttlSeconds) {
+      // SQL crudo: el driver neon-http no soporta .returning() en UPDATE
+      // (y db.execute está normalizado en ambos drivers).
+      const threshold = new Date(Date.now() - ttlSeconds * 1000).toISOString();
+      const result = await db.execute(
+        sql`UPDATE runs SET locked_at = ${new Date().toISOString()}
+            WHERE id = ${id}
+              AND (locked_at IS NULL OR locked_at < ${threshold})
+            RETURNING id`,
+      );
+      return result.rows.length > 0;
+    },
+
+    async releaseRunLock(id) {
+      await db.update(runs).set({ lockedAt: null }).where(eq(runs.id, id));
     },
 
     async insertTasks(runId, items: NewTask[]) {

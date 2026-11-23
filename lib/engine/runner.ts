@@ -52,6 +52,9 @@ async function stepOrchestrate(deps: EngineDeps, run: Run): Promise<void> {
   const { store } = deps;
   await store.updateRun(run.id, { status: "running" });
   await ensureSandboxSeeded(store);
+  // Foto del sandbox previa a cualquier cambio: permite «Revertir» (spec 003).
+  const snapshot = await store.sandboxSnapshot();
+  await store.updateRun(run.id, { sandboxSnapshot: snapshot });
   await store.addActivity({
     runId: run.id,
     agent: "system",

@@ -45,11 +45,20 @@ export interface Store {
         | "finalReport"
         | "errorMessage"
         | "finishedAt"
+        | "sandboxSnapshot"
       >
     >,
   ): Promise<void>;
   findActiveRun(): Promise<Run | null>;
   listRuns(limit: number): Promise<Run[]>;
+
+  /**
+   * Cerrojo de avance (spec 003, FR-006): evita que dos clientes ejecuten
+   * pasos de la misma ejecución en paralelo (p. ej. dos pestañas). Devuelve
+   * false si otro cliente la tiene bloqueada dentro del TTL.
+   */
+  acquireRunLock(id: string, ttlSeconds: number): Promise<boolean>;
+  releaseRunLock(id: string): Promise<void>;
 
   insertTasks(runId: string, items: NewTask[]): Promise<Task[]>;
   getTasks(runId: string): Promise<Task[]>;

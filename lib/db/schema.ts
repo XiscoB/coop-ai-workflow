@@ -53,6 +53,8 @@ export const runs = pgTable("runs", {
   finalReport: text("final_report"),
   errorMessage: text("error_message"),
   providerSnapshot: text("provider_snapshot"),
+  sandboxSnapshot: jsonb("sandbox_snapshot"),
+  lockedAt: timestamp("locked_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

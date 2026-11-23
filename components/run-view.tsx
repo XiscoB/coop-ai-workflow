@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useRunDriver, TERMINAL_STATUSES } from "@/components/use-run-driver";
 import {
   AGENT_DOT,
@@ -11,7 +12,9 @@ import {
 } from "@/components/run-badges";
 
 export function RunView({ runId }: { runId: string }) {
-  const { payload, paused, notFound, active } = useRunDriver(runId);
+  const { payload, paused, notFound, active, resume } = useRunDriver(runId);
+  const [recoveryMsg, setRecoveryMsg] = useState<string | null>(null);
+  const [recovering, setRecovering] = useState(false);
 
   if (notFound) {
     return (
@@ -29,6 +32,39 @@ export function RunView({ runId }: { runId: string }) {
   }
 
   const { run, tasks, activities } = payload;
+
+  async function onResume() {
+    setRecovering(true);
+    setRecoveryMsg(null);
+    const error = await resume();
+    if (error) setRecoveryMsg(error);
+    setRecovering(false);
+  }
+
+  async function onRevert() {
+    if (
+      !confirm(
+        "¿Revertir los cambios de esta ejecución? La web volverá al estado previo.",
+      )
+    )
+      return;
+    setRecovering(true);
+    setRecoveryMsg(null);
+    try {
+      const res = await fetch(`/api/runs/${run.id}/revert`, { method: "POST" });
+      const data = await res.json();
+      setRecoveryMsg(
+        res.ok
+          ? "Cambios revertidos: la web volvió al estado previo a esta ejecución."
+          : (data.error ?? "No se pudo revertir."),
+      );
+    } catch {
+      setRecoveryMsg("Error de conexión al revertir.");
+    } finally {
+      setRecovering(false);
+    }
+  }
+
   const activeTask = tasks.find(
     (task) => task.status === "in_progress" || task.status === "in_review",
   );
@@ -80,6 +116,39 @@ export function RunView({ runId }: { runId: string }) {
             <p className="mt-3 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300">
               {run.errorMessage}
             </p>
+          )}
+          {TERMINAL_STATUSES.has(run.status) && (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              {(run.status === "error" ||
+                (run.status === "completed_with_failures" &&
+                  tasks.some((task) => task.status === "failed"))) && (
+                <button
+                  onClick={onResume}
+                  disabled={recovering}
+                  className="rounded bg-stone-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
+                >
+                  {recovering
+                    ? "Reanudando…"
+                    : run.status === "error"
+                      ? "Reintentar desde aquí"
+                      : "Reintentar tareas falladas"}
+                </button>
+              )}
+              {run.sandboxSnapshot && (
+                <button
+                  onClick={onRevert}
+                  disabled={recovering}
+                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-100 disabled:opacity-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                >
+                  Revertir cambios
+                </button>
+              )}
+              {recoveryMsg && (
+                <span className="text-sm text-stone-600 dark:text-stone-400">
+                  {recoveryMsg}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
@@ -139,26 +208,35 @@ export function RunView({ runId }: { runId: string }) {
         <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-stone-500 dark:text-stone-400">
           Actividad de los agentes
         </h2>
-        <ol className="max-h-[70vh] space-y-2 overflow-y-auto pr-1">
+        <ol className="relative ml-2 max-h-[70vh] space-y-3 overflow-y-auto border-l-2 border-stone-200 pl-4 pr-1 dark:border-stone-700">
           {activities.map((activity) => (
-            <li
-              key={activity.id}
-              className="rounded border border-stone-200 bg-white p-2.5 text-sm shadow-sm dark:border-stone-700 dark:bg-stone-900"
-            >
-              <p className="mb-0.5 flex items-center gap-2 text-xs font-semibold text-stone-600 dark:text-stone-400">
-                <span
-                  className={`inline-block h-2 w-2 rounded-full ${AGENT_DOT[activity.agent] ?? "bg-stone-400"}`}
-                />
-                {AGENT_LABEL[activity.agent] ?? activity.agent}
-                {activity.durationMs != null && (
-                  <span className="font-normal text-stone-400 dark:text-stone-500">
-                    · {(activity.durationMs / 1000).toFixed(1)} s
-                  </span>
-                )}
-              </p>
-              <p className="whitespace-pre-wrap text-stone-700 dark:text-stone-300">
-                {activity.content}
-              </p>
+            <li key={activity.id} className="relative">
+              <span
+                className={`absolute -left-[21px] top-3 inline-block h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-stone-900 ${AGENT_DOT[activity.agent] ?? "bg-stone-400"}`}
+              />
+              <div className="rounded border border-stone-200 bg-white p-2.5 text-sm shadow-sm dark:border-stone-700 dark:bg-stone-900">
+                <p className="mb-0.5 flex flex-wrap items-center gap-x-2 text-xs font-semibold text-stone-600 dark:text-stone-400">
+                  {AGENT_LABEL[activity.agent] ?? activity.agent}
+                  <time
+                    className="font-normal text-stone-400 dark:text-stone-500"
+                    dateTime={activity.createdAt}
+                  >
+                    {new Date(activity.createdAt).toLocaleTimeString("es", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </time>
+                  {activity.durationMs != null && (
+                    <span className="font-normal text-stone-400 dark:text-stone-500">
+                      · {(activity.durationMs / 1000).toFixed(1)} s
+                    </span>
+                  )}
+                </p>
+                <p className="whitespace-pre-wrap text-stone-700 dark:text-stone-300">
+                  {activity.content}
+                </p>
+              </div>
             </li>
           ))}
           {activities.length === 0 && (

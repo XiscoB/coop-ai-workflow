@@ -37,6 +37,8 @@ export function createMemoryStore(seedFiles: SeedFile[] = []): Store {
         finalReport: null,
         errorMessage: null,
         providerSnapshot: data.providerSnapshot,
+        sandboxSnapshot: null,
+        lockedAt: null,
         createdAt: now,
         finishedAt: null,
       };
@@ -64,6 +66,20 @@ export function createMemoryStore(seedFiles: SeedFile[] = []): Store {
       return [...runsTable.values()]
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
         .slice(0, limit);
+    },
+
+    async acquireRunLock(id, ttlSeconds) {
+      const run = runsTable.get(id);
+      if (!run) return false;
+      const threshold = Date.now() - ttlSeconds * 1000;
+      if (run.lockedAt && run.lockedAt.getTime() > threshold) return false;
+      run.lockedAt = new Date();
+      return true;
+    },
+
+    async releaseRunLock(id) {
+      const run = runsTable.get(id);
+      if (run) run.lockedAt = null;
     },
 
     async insertTasks(runId, items: NewTask[]) {

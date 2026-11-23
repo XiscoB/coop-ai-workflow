@@ -13,6 +13,7 @@ export interface RunPayload {
     finalReport: string | null;
     errorMessage: string | null;
     providerSnapshot: string | null;
+    sandboxSnapshot: Record<string, string> | null;
     createdAt: string;
     finishedAt: string | null;
   };
@@ -48,6 +49,7 @@ export interface RunDriver {
   paused: string | null;
   notFound: boolean;
   active: boolean;
+  resume: () => Promise<string | null>;
 }
 
 /**
@@ -59,6 +61,7 @@ export function useRunDriver(runId: string): RunDriver {
   const [payload, setPayload] = useState<RunPayload | null>(null);
   const [paused, setPaused] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [driveNonce, setDriveNonce] = useState(0);
   const stopped = useRef(false);
 
   const load = useCallback(async () => {
@@ -107,8 +110,20 @@ export function useRunDriver(runId: string): RunDriver {
       stopped.current = true;
       if (timer) clearTimeout(timer);
     };
-  }, [load, runId]);
+  }, [load, runId, driveNonce]);
+
+  /** Reanuda una ejecución en error y rearranca el driver (spec 003). */
+  const resume = useCallback(async () => {
+    const res = await fetch(`/api/runs/${runId}/resume`, { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) {
+      return (data as { error?: string }).error ?? "No se pudo reanudar.";
+    }
+    setPaused(null);
+    setDriveNonce((nonce) => nonce + 1);
+    return null;
+  }, [runId]);
 
   const active = payload !== null && !TERMINAL_STATUSES.has(payload.run.status);
-  return { payload, paused, notFound, active };
+  return { payload, paused, notFound, active, resume };
 }

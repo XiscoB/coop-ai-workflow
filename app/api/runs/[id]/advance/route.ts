@@ -41,15 +41,33 @@ export async function POST(_request: Request, { params }: Params) {
     );
   }
 
+  // Cerrojo de avance (spec 003, FR-006): dos clientes (p. ej. dos pestañas)
+  // no pueden ejecutar pasos de la misma ejecución en paralelo.
+  const locked = await store.acquireRunLock(id, 120);
+  if (!locked) {
+    return NextResponse.json(
+      {
+        error:
+          "Otro cliente está avanzando esta ejecución ahora mismo. Recarga la página en unos segundos.",
+        code: "RUN_BUSY",
+      },
+      { status: 409 },
+    );
+  }
+
   const resolveProvider = (role: AgentRole) =>
     Promise.resolve(providerForRole(detection, role, config));
 
-  const run = await advance({ store, resolveProvider }, id);
+  try {
+    const run = await advance({ store, resolveProvider }, id);
 
-  const [tasks, activities] = await Promise.all([
-    store.getTasks(id),
-    store.listActivities(id),
-  ]);
+    const [tasks, activities] = await Promise.all([
+      store.getTasks(id),
+      store.listActivities(id),
+    ]);
 
-  return NextResponse.json({ run, tasks, activities });
+    return NextResponse.json({ run, tasks, activities });
+  } finally {
+    await store.releaseRunLock(id);
+  }
 }
