@@ -5,7 +5,7 @@ import { useRunDriver } from "@/components/use-run-driver";
 import { AgentChip, RunStatusBadge } from "@/components/run-badges";
 
 export function ActiveRunCard({ runId }: { runId: string }) {
-  const { payload, paused } = useRunDriver(runId);
+  const { payload, paused, busyWait } = useRunDriver(runId);
 
   if (!payload) {
     return (
@@ -63,6 +63,11 @@ export function ActiveRunCard({ runId }: { runId: string }) {
         />
       </div>
 
+      {busyWait && (
+        <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
+          Otra pestaña está conduciendo esta ejecución; sincronizando…
+        </p>
+      )}
       {paused && (
         <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-200">
           {paused} (en pausa; se reanuda al recargar)

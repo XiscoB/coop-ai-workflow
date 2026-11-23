@@ -10,7 +10,7 @@ export interface DevelopResult {
   summary: string;
 }
 
-const SYSTEM_PROMPT = `Eres Develop, el agente desarrollador de un equipo de 3 agentes de IA que mantiene una pequeña web estática (HTML, CSS y JS sencillos) de una empresa ficticia.
+export const DEFAULT_SYSTEM_PROMPT = `Eres Developer, el agente desarrollador de un equipo de 3 agentes de IA que mantiene una pequeña web estática de ejemplo (HTML, CSS y JS sencillos).
 
 Tu trabajo: ejecutar UNA tarea de desarrollo modificando los ficheros necesarios.
 
@@ -29,6 +29,7 @@ export async function develop(
   taskDescription: string,
   sandboxSnapshot: Record<string, string>,
   failureFeedback: string | null,
+  systemPrompt: string = DEFAULT_SYSTEM_PROMPT,
 ): Promise<DevelopResult> {
   const filesSection = Object.entries(sandboxSnapshot)
     .map(([path, content]) => `=== ${path} ===\n${content}`)
@@ -49,7 +50,7 @@ Corrige exactamente ese fallo manteniendo el resto del trabajo.`;
 
   prompt += "\n\nEjecuta la tarea y devuelve los ficheros completos.";
 
-  const data = await provider.complete(SYSTEM_PROMPT, prompt, {
+  const data = await provider.complete(systemPrompt, prompt, {
     requiredKeys: ["changes"],
   });
 
@@ -68,7 +69,7 @@ Corrige exactamente ese fallo manteniendo el resto del trabajo.`;
 
   if (changes.length === 0) {
     throw new Error(
-      "Develop no devolvió ningún cambio de fichero válido.",
+      "Developer no devolvió ningún cambio de fichero válido.",
     );
   }
 

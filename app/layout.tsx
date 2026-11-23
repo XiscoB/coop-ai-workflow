@@ -3,11 +3,12 @@ import Link from "next/link";
 import "./globals.css";
 import { ProviderStatus } from "@/components/provider-status";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationBell } from "@/components/notification-bell";
 
 export const metadata: Metadata = {
   title: "Coop AI Workflow",
   description:
-    "Equipo de 3 agentes de IA (Orquestador, Develop, Testing) que trabajan juntos sobre una web de ejemplo.",
+    "Equipo de 3 agentes de IA (Orquestador, Developer, Testing) que trabajan juntos sobre una web de ejemplo.",
 };
 
 // Aplica el tema antes del primer paint: localStorage manda; si no hay
@@ -29,7 +30,7 @@ export default function RootLayout({
               <Link href="/" className="text-lg font-bold dark:text-stone-100">
                 Coop AI Workflow
               </Link>
-              <nav className="flex gap-3 text-sm text-stone-600 dark:text-stone-400">
+              <nav className="flex flex-wrap gap-3 text-sm text-stone-600 dark:text-stone-400">
                 <Link href="/" className="hover:text-stone-900 dark:hover:text-stone-100">
                   Panel
                 </Link>
@@ -39,10 +40,20 @@ export default function RootLayout({
                 <Link href="/preview" className="hover:text-stone-900 dark:hover:text-stone-100">
                   Web de ejemplo
                 </Link>
+                <Link href="/logs" className="hover:text-stone-900 dark:hover:text-stone-100">
+                  Logs
+                </Link>
+                <Link href="/configuracion" className="hover:text-stone-900 dark:hover:text-stone-100">
+                  Configuración
+                </Link>
+                <Link href="/acerca-de" className="hover:text-stone-900 dark:hover:text-stone-100">
+                  Acerca de
+                </Link>
               </nav>
             </div>
             <div className="flex items-center gap-2">
               <ProviderStatus />
+              <NotificationBell />
               <ThemeToggle />
             </div>
           </div>

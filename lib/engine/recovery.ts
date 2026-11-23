@@ -49,6 +49,7 @@ export async function resumeRun(store: Store, runId: string): Promise<Run> {
     currentTaskId: firstReactivated,
     cyclesUsed: 0,
     errorMessage: null,
+    finalReport: null,
     finishedAt: null,
   });
 

@@ -14,9 +14,27 @@ export type ResolveProvider = (
   role: "orchestrator" | "develop" | "testing",
 ) => Promise<LLMProvider | null>;
 
+export type AgentRole = "orchestrator" | "develop" | "testing";
+
 export interface EngineDeps {
   store: Store;
   resolveProvider: ResolveProvider;
+}
+
+type PromptOverrides = Partial<Record<AgentRole, string>>;
+
+/** Overrides de system prompt por agente desde settings (spec 004, FR-003). */
+async function getPromptOverrides(store: Store): Promise<PromptOverrides> {
+  try {
+    const settings = await store.getSettings();
+    return {
+      orchestrator: settings.prompt_orchestrator || undefined,
+      develop: settings.prompt_develop || undefined,
+      testing: settings.prompt_testing || undefined,
+    };
+  } catch {
+    return {};
+  }
 }
 
 export const TERMINAL_STATUSES = new Set([
@@ -64,9 +82,15 @@ async function stepOrchestrate(deps: EngineDeps, run: Run): Promise<void> {
 
   const provider = await requireProvider(deps, "orchestrator");
   const files = await store.sandboxList();
+  const prompts = await getPromptOverrides(store);
 
   const start = Date.now();
-  const outcome = await orchestrate(provider, run.request, files);
+  const outcome = await orchestrate(
+    provider,
+    run.request,
+    files,
+    prompts.orchestrator,
+  );
   const duration = Date.now() - start;
 
   if (outcome.kind === "rejected") {
@@ -137,6 +161,7 @@ async function stepDevelop(deps: EngineDeps, run: Run): Promise<void> {
 
   const provider = await requireProvider(deps, "develop");
   const snapshot = await store.sandboxSnapshot();
+  const prompts = await getPromptOverrides(store);
 
   const start = Date.now();
   const result = await develop(
@@ -144,6 +169,7 @@ async function stepDevelop(deps: EngineDeps, run: Run): Promise<void> {
     task.description,
     snapshot,
     task.lastFailureReason,
+    prompts.develop,
   );
   const duration = Date.now() - start;
 
@@ -219,6 +245,7 @@ async function stepTest(deps: EngineDeps, run: Run): Promise<void> {
   }
 
   const provider = await requireProvider(deps, "testing");
+  const prompts = await getPromptOverrides(store);
   const start = Date.now();
   const verdict: Verdict = await review(
     provider,
@@ -227,6 +254,7 @@ async function stepTest(deps: EngineDeps, run: Run): Promise<void> {
     deterministic.llmReviewCriteria,
     changedFiles,
     snapshot,
+    prompts.testing,
   );
   const duration = Date.now() - start;
 

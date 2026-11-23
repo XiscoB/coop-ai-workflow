@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { addNotification, isTtsEnabled, speak } from "@/components/notifications";
 
 export interface RunPayload {
   run: {
@@ -47,6 +48,7 @@ export const TERMINAL_STATUSES = new Set([
 export interface RunDriver {
   payload: RunPayload | null;
   paused: string | null;
+  busyWait: boolean;
   notFound: boolean;
   active: boolean;
   resume: () => Promise<string | null>;
@@ -60,9 +62,37 @@ export interface RunDriver {
 export function useRunDriver(runId: string): RunDriver {
   const [payload, setPayload] = useState<RunPayload | null>(null);
   const [paused, setPaused] = useState<string | null>(null);
+  const [busyWait, setBusyWait] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [driveNonce, setDriveNonce] = useState(0);
   const stopped = useRef(false);
+  const prevStatus = useRef<string | null>(null);
+
+  /** Notifica (campana + TTS) la transición a estado terminal (FR-006). */
+  const notifyIfTerminal = useCallback(async (data: RunPayload) => {
+    const status = data.run.status;
+    const was = prevStatus.current;
+    prevStatus.current = status;
+    if (
+      !TERMINAL_STATUSES.has(status) ||
+      was === null ||
+      TERMINAL_STATUSES.has(was)
+    ) {
+      return;
+    }
+    const titles: Record<string, string> = {
+      completed: "Ejecución completada",
+      completed_with_failures: "Ejecución completada con fallos",
+      error: "Ejecución en error",
+      rejected: "Petición rechazada",
+    };
+    const title = titles[status] ?? "Ejecución terminada";
+    const body = `«${data.run.request}»`;
+    addNotification({ title, body, runId: data.run.id });
+    if (await isTtsEnabled()) {
+      speak(`${title}. ${data.run.request}`);
+    }
+  }, []);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/runs/${runId}`);
@@ -72,6 +102,7 @@ export function useRunDriver(runId: string): RunDriver {
     }
     const data = (await res.json()) as RunPayload;
     setPayload(data);
+    prevStatus.current = data.run.status;
     return data;
   }, [runId]);
 
@@ -91,9 +122,18 @@ export function useRunDriver(runId: string): RunDriver {
           setPaused(data.error ?? "Sin servicio de IA disponible.");
           return;
         }
+        if (res.status === 409 && data.code === "RUN_BUSY") {
+          // Otra pestaña/proceso está conduciendo la ejecución (FR-006):
+          // no es un error — esperamos y reintentamos sin avanzar.
+          setBusyWait(true);
+          timer = setTimeout(drive, 3000);
+          return;
+        }
+        setBusyWait(false);
         if (res.ok) {
           setPayload(data as RunPayload);
           setPaused(null);
+          void notifyIfTerminal(data as RunPayload);
           if (!TERMINAL_STATUSES.has((data as RunPayload).run.status)) {
             timer = setTimeout(drive, 400);
           }
@@ -110,7 +150,7 @@ export function useRunDriver(runId: string): RunDriver {
       stopped.current = true;
       if (timer) clearTimeout(timer);
     };
-  }, [load, runId, driveNonce]);
+  }, [load, runId, driveNonce, notifyIfTerminal]);
 
   /** Reanuda una ejecución en error y rearranca el driver (spec 003). */
   const resume = useCallback(async () => {
@@ -125,5 +165,5 @@ export function useRunDriver(runId: string): RunDriver {
   }, [runId]);
 
   const active = payload !== null && !TERMINAL_STATUSES.has(payload.run.status);
-  return { payload, paused, notFound, active, resume };
+  return { payload, paused, busyWait, notFound, active, resume };
 }

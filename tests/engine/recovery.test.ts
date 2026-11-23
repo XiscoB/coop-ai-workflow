@@ -205,6 +205,7 @@ describe("resume desde completed_with_failures", () => {
     const resumed = await resumeRun(store, run.id);
     expect(resumed.status).toBe("running");
     expect(resumed.cyclesUsed).toBe(0);
+    expect(resumed.finalReport).toBeNull();
     const tasks = await store.getTasks(run.id);
     expect(tasks[0].status).toBe("pending");
 

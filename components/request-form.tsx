@@ -51,7 +51,7 @@ export function RequestForm({
       <h2 className="mb-1 font-bold dark:text-stone-100">Nueva petición</h2>
       <p className="mb-3 text-sm text-stone-600 dark:text-stone-400">
         El <strong>Orquestador</strong> la divide en tareas,{" "}
-        <strong>Develop</strong> las ejecuta y <strong>Testing</strong> las
+        <strong>Developer</strong> las ejecuta y <strong>Testing</strong> las
         revisa hasta que todo pasa.
       </p>
 

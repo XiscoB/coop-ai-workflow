@@ -6,9 +6,9 @@ export interface Verdict {
   reasons: string[];
 }
 
-const SYSTEM_PROMPT = `Eres Testing, el agente verificador de un equipo de 3 agentes de IA que mantiene una pequeña web estática de una empresa ficticia.
+export const DEFAULT_SYSTEM_PROMPT = `Eres Testing, el agente verificador de un equipo de 3 agentes de IA que mantiene una pequeña web estática de ejemplo.
 
-Tu trabajo: revisar el trabajo que Develop ha hecho en UNA tarea y dar un veredicto objetivo.
+Tu trabajo: revisar el trabajo que Developer ha hecho en UNA tarea y dar un veredicto objetivo.
 
 Reglas:
 - Sé estricto pero justo: aprueba solo si la tarea está realmente cumplida y la web sigue siendo coherente.
@@ -27,6 +27,7 @@ export async function review(
   llmReviewCriteria: string[],
   changedFiles: Record<string, string>,
   allFiles: Record<string, string>,
+  systemPrompt: string = DEFAULT_SYSTEM_PROMPT,
 ): Promise<Verdict> {
   if (deterministicFailures.length > 0) {
     return {
@@ -43,9 +44,9 @@ export async function review(
     .map((path) => `- ${path}`)
     .join("\n");
 
-  let prompt = `Tarea que Develop debía cumplir: ${taskDescription}
+  let prompt = `Tarea que Developer debía cumplir: ${taskDescription}
 
-Ficheros que Develop creó o modificó (contenido completo actual):
+Ficheros que Developer creó o modificó (contenido completo actual):
 ${changedSection}
 
 Todos los ficheros de la web tras el cambio:
@@ -60,7 +61,7 @@ ${llmReviewCriteria.map((criterion) => `- ${criterion}`).join("\n")}`;
 
   prompt += "\n\nDa tu veredicto.";
 
-  const data = await provider.complete(SYSTEM_PROMPT, prompt, {
+  const data = await provider.complete(systemPrompt, prompt, {
     requiredKeys: ["pass"],
   });
 

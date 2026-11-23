@@ -18,9 +18,9 @@ export interface OrchestrationRejection {
 
 export type OrchestrationOutcome = OrchestrationResult | OrchestrationRejection;
 
-const SYSTEM_PROMPT = `Eres el Orquestador de un equipo de 3 agentes de IA que mantiene una pequeña web estática de una empresa ficticia (HTML, CSS y JS sencillos).
+export const DEFAULT_SYSTEM_PROMPT = `Eres el Orquestador de un equipo de 3 agentes de IA que mantiene una pequeña web estática de ejemplo (HTML, CSS y JS sencillos).
 
-Tu trabajo: recibir una petición del usuario y descomponerla en tareas concretas y pequeñas para el agente Develop.
+Tu trabajo: recibir una petición del usuario y descomponerla en tareas concretas y pequeñas para el agente Developer.
 
 Reglas:
 - Si la petición está vacía, es ininteligible o no tiene que ver con modificar la web, RECHÁZALA con una explicación breve y amable en español.
@@ -40,6 +40,7 @@ export async function orchestrate(
   provider: LLMProvider,
   request: string,
   sandboxFiles: string[],
+  systemPrompt: string = DEFAULT_SYSTEM_PROMPT,
 ): Promise<OrchestrationOutcome> {
   const prompt = `Petición del usuario: "${request}"
 
@@ -48,7 +49,7 @@ ${sandboxFiles.map((path) => `- ${path}`).join("\n")}
 
 Descompón la petición en tareas o recházala según las reglas.`;
 
-  const data = await provider.complete(SYSTEM_PROMPT, prompt, {
+  const data = await provider.complete(systemPrompt, prompt, {
     requiredKeys: ["outcome"],
   });
 

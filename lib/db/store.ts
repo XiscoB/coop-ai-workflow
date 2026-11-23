@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { getDb } from "./client";
-import { activities, runs, sandboxFiles, tasks } from "./schema";
+import { activities, runs, sandboxFiles, settings, tasks } from "./schema";
 import type { NewActivity, NewTask, SeedFile, Store } from "@/lib/store";
 
 const ACTIVE_STATUSES = ["pending", "running"] as const;
@@ -168,6 +168,34 @@ export function createDrizzleStore(): Store {
     async sandboxCount() {
       const rows = await db.select({ path: sandboxFiles.path }).from(sandboxFiles);
       return rows.length;
+    },
+
+    async getSettings() {
+      const rows = await db.select().from(settings);
+      return Object.fromEntries(rows.map((row) => [row.key, row.value]));
+    },
+
+    async setSetting(key, value) {
+      await db
+        .insert(settings)
+        .values({ key, value, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value, updatedAt: new Date() },
+        });
+    },
+
+    async deleteSetting(key) {
+      await db.delete(settings).where(eq(settings.key, key));
+    },
+
+    async listSystemActivities(limit) {
+      return db
+        .select()
+        .from(activities)
+        .where(eq(activities.agent, "system"))
+        .orderBy(desc(activities.id))
+        .limit(limit);
     },
   };
 }

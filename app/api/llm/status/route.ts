@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
+import { getStore } from "@/lib/db/store";
+import { getEffectiveConfig } from "@/lib/config";
 import { detectProvider, probeProvider } from "@/lib/llm";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  const detection = await detectProvider();
+  const store = getStore();
+  const config = await getEffectiveConfig(store);
+  const detection = await detectProvider(config);
 
   if (!detection.provider) {
     return NextResponse.json({
@@ -14,7 +18,7 @@ export async function GET() {
         ok: false,
         detail:
           detection.warning ??
-          "Sin servicio de IA: arranca Ollama en local o configura LLM_API_*.",
+          "Sin servicio de IA: arranca Ollama en local o configura una API externa en Configuración.",
       },
       warning: detection.warning,
     });

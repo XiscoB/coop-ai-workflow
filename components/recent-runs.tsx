@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { RunStatusBadge } from "@/components/run-badges";
+import { formatDateTime } from "@/components/format";
 
 interface RunRow {
   id: string;
@@ -72,8 +73,16 @@ export function RecentRuns({
                 href={`/ejecucion/${run.id}`}
                 className="flex items-center justify-between gap-3 py-2 hover:bg-stone-50 dark:hover:bg-stone-800/60"
               >
-                <span className="truncate text-sm dark:text-stone-200">
-                  «{run.request}»
+                <span className="min-w-0">
+                  <span className="block truncate text-sm dark:text-stone-200">
+                    «{run.request}»
+                  </span>
+                  <time
+                    dateTime={run.createdAt}
+                    className="text-xs text-stone-400 dark:text-stone-500"
+                  >
+                    {formatDateTime(run.createdAt)}
+                  </time>
                 </span>
                 <RunStatusBadge status={run.status} />
               </Link>

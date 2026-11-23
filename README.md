@@ -4,8 +4,8 @@ Un equipo de 3 agentes de IA que trabajan juntos sobre una web de ejemplo:
 
 - **Orquestador** — recibe una petición en lenguaje natural (p. ej. «añade una
   página de contacto a esta web»), la divide en tareas y las reparte.
-- **Develop** — ejecuta las tareas de desarrollo, modificando de verdad la web.
-- **Testing** — comprueba lo hecho por Develop (checks automáticos + revisión) y
+- **Developer** — ejecuta las tareas de desarrollo, modificando de verdad la web.
+- **Testing** — comprueba lo hecho por Developer (checks automáticos + revisión) y
   devuelve lo que falla, hasta que todo pasa o se agota el límite de ciclos.
 
 En pantalla se ve en todo momento qué hace cada agente y en qué estado está cada
@@ -71,7 +71,7 @@ tarea. Todo queda registrado y consultable en el historial.
   en vivo y, si cierras la pestaña, la ejecución queda en pausa y se reanuda al
   volver.
 - **Sandbox**: la web de ejemplo vive en la base de datos (el filesystem de
-  Vercel es de solo lectura). Develop la modifica con herramientas de fichero;
+  Vercel es de solo lectura). Developer la modifica con herramientas de fichero;
   Testing combina checks deterministas (HTML equilibrado, enlaces y recursos
   existentes, criterio de aceptación por tarea) con revisión del LLM.
 - **Límite de ciclos**: 5 por defecto; al agotarse, la ejecución termina como

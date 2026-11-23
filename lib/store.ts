@@ -86,4 +86,12 @@ export interface Store {
   sandboxSnapshot(): Promise<Record<string, string>>;
   sandboxReset(files: SeedFile[]): Promise<void>;
   sandboxCount(): Promise<number>;
+
+  /** Ajustes de la instancia (spec 004): proveedor de IA, prompts, TTS. */
+  getSettings(): Promise<Record<string, string>>;
+  setSetting(key: string, value: string): Promise<void>;
+  deleteSetting(key: string): Promise<void>;
+
+  /** Eventos de sistema recientes de todas las ejecuciones (página Logs). */
+  listSystemActivities(limit: number): Promise<Activity[]>;
 }

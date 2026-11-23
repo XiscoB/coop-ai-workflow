@@ -21,6 +21,7 @@ export function createMemoryStore(seedFiles: SeedFile[] = []): Store {
   const sandbox = new Map<string, string>(
     seedFiles.map((file) => [file.path, file.content]),
   );
+  const settingsMap = new Map<string, string>();
   let activitySeq = 0;
 
   return {
@@ -166,6 +167,25 @@ export function createMemoryStore(seedFiles: SeedFile[] = []): Store {
 
     async sandboxCount() {
       return sandbox.size;
+    },
+
+    async getSettings() {
+      return Object.fromEntries(settingsMap);
+    },
+
+    async setSetting(key, value) {
+      settingsMap.set(key, value);
+    },
+
+    async deleteSetting(key) {
+      settingsMap.delete(key);
+    },
+
+    async listSystemActivities(limit) {
+      return [...activitiesTable.values()]
+        .filter((row) => row.agent === "system")
+        .sort((a, b) => b.id - a.id)
+        .slice(0, limit);
     },
   };
 }

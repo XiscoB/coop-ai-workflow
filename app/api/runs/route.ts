@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/db/store";
+import { getEffectiveConfig } from "@/lib/config";
 import { detectProvider } from "@/lib/llm";
 
 export const runtime = "nodejs";
@@ -34,7 +35,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const detection = await detectProvider();
+  const store = getStore();
+  const detection = await detectProvider(await getEffectiveConfig(store));
   if (!detection.provider) {
     return NextResponse.json(
       {
@@ -47,7 +49,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const store = getStore();
   let active;
   try {
     active = await store.findActiveRun();

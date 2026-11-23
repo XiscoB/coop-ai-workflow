@@ -44,6 +44,11 @@ export async function GET(_request: Request, { params }: Params) {
     headers: {
       "Content-Type": contentType,
       "Cache-Control": "no-store",
+      // La mini-web la escriben agentes: se renderiza por diseño, pero su JS
+      // no puede llamar a nuestra API (connect-src none) y los formularios
+      // solo pueden enviar a orígenes https.
+      "Content-Security-Policy":
+        "default-src 'self'; connect-src 'none'; form-action 'self' https:",
     },
   });
 }

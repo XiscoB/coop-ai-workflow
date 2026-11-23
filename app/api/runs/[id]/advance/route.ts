@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getStore } from "@/lib/db/store";
 import { advance, isTerminal } from "@/lib/engine/runner";
 import { detectProvider, providerForRole, type AgentRole } from "@/lib/llm";
-import { getConfig } from "@/lib/config";
+import { getEffectiveConfig } from "@/lib/config";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,7 +27,7 @@ export async function POST(_request: Request, { params }: Params) {
     );
   }
 
-  const config = getConfig();
+  const config = await getEffectiveConfig(store);
   const detection = await detectProvider(config);
   if (!detection.provider) {
     return NextResponse.json(

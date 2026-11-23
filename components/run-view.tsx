@@ -10,9 +10,12 @@ import {
   RunStatusBadge,
   TaskStatusBadge,
 } from "@/components/run-badges";
+import { Spinner } from "@/components/spinner";
+import { formatEventTime } from "@/components/format";
 
 export function RunView({ runId }: { runId: string }) {
-  const { payload, paused, notFound, active, resume } = useRunDriver(runId);
+  const { payload, paused, busyWait, notFound, active, resume } =
+    useRunDriver(runId);
   const [recoveryMsg, setRecoveryMsg] = useState<string | null>(null);
   const [recovering, setRecovering] = useState(false);
 
@@ -28,10 +31,16 @@ export function RunView({ runId }: { runId: string }) {
   }
 
   if (!payload) {
-    return <p className="text-stone-500 dark:text-stone-400">Cargando ejecución…</p>;
+    return (
+      <div className="flex items-center gap-3 text-stone-500 dark:text-stone-400">
+        <Spinner /> Cargando ejecución…
+      </div>
+    );
   }
 
   const { run, tasks, activities } = payload;
+  // Cronología inversa (lo más reciente arriba, estilo Twitter) — FR-007.
+  const activitiesDesc = [...activities].reverse();
 
   async function onResume() {
     setRecovering(true);
@@ -80,9 +89,9 @@ export function RunView({ runId }: { runId: string }) {
       : null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
       <section>
-        <div className="mb-4 rounded-lg border border-stone-300 bg-white p-4 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+        <div className="mb-4 rounded-lg border border-stone-300 bg-white p-4 shadow-sm dark:border-stone-700 dark:bg-stone-900 lg:sticky lg:top-4 lg:z-10">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h1 className="text-lg font-bold dark:text-stone-100">«{run.request}»</h1>
             <RunStatusBadge status={run.status} />
@@ -101,6 +110,12 @@ export function RunView({ runId }: { runId: string }) {
                   — tarea {activeTask.seq}
                 </span>
               )}
+            </p>
+          )}
+          {busyWait && !TERMINAL_STATUSES.has(run.status) && (
+            <p className="mt-3 rounded border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300">
+              Otra pestaña está conduciendo esta ejecución; sincronizando
+              automáticamente…
             </p>
           )}
           {paused && !TERMINAL_STATUSES.has(run.status) && (
@@ -125,8 +140,9 @@ export function RunView({ runId }: { runId: string }) {
                 <button
                   onClick={onResume}
                   disabled={recovering}
-                  className="rounded bg-stone-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
+                  className="inline-flex items-center gap-2 rounded bg-stone-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
                 >
+                  {recovering && <Spinner small />}
                   {recovering
                     ? "Reanudando…"
                     : run.status === "error"
@@ -138,8 +154,9 @@ export function RunView({ runId }: { runId: string }) {
                 <button
                   onClick={onRevert}
                   disabled={recovering}
-                  className="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-100 disabled:opacity-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                  className="inline-flex items-center gap-2 rounded border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-100 disabled:opacity-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                 >
+                  {recovering && <Spinner small />}
                   Revertir cambios
                 </button>
               )}
@@ -151,6 +168,23 @@ export function RunView({ runId }: { runId: string }) {
             </div>
           )}
         </div>
+
+        {run.finalReport && (
+          <div className="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/50">
+            <h2 className="mb-2 font-bold text-emerald-900 dark:text-emerald-200">
+              Informe final
+            </h2>
+            <pre className="whitespace-pre-wrap font-sans text-sm text-emerald-900 dark:text-emerald-200">
+              {run.finalReport}
+            </pre>
+            <Link
+              href="/preview"
+              className="mt-2 inline-block text-sm font-medium text-emerald-800 underline dark:text-emerald-300"
+            >
+              Ver la web de ejemplo
+            </Link>
+          </div>
+        )}
 
         <ol className="space-y-3">
           {tasks.map((task) => (
@@ -185,23 +219,6 @@ export function RunView({ runId }: { runId: string }) {
             </li>
           )}
         </ol>
-
-        {run.finalReport && (
-          <div className="mt-6 rounded-lg border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/50">
-            <h2 className="mb-2 font-bold text-emerald-900 dark:text-emerald-200">
-              Informe final
-            </h2>
-            <pre className="whitespace-pre-wrap font-sans text-sm text-emerald-900 dark:text-emerald-200">
-              {run.finalReport}
-            </pre>
-            <Link
-              href="/preview"
-              className="mt-2 inline-block text-sm font-medium text-emerald-800 underline dark:text-emerald-300"
-            >
-              Ver la web de ejemplo
-            </Link>
-          </div>
-        )}
       </section>
 
       <aside>
@@ -209,7 +226,7 @@ export function RunView({ runId }: { runId: string }) {
           Actividad de los agentes
         </h2>
         <ol className="relative ml-2 max-h-[70vh] space-y-3 overflow-y-auto border-l-2 border-stone-200 pl-4 pr-1 dark:border-stone-700">
-          {activities.map((activity) => (
+          {activitiesDesc.map((activity) => (
             <li key={activity.id} className="relative">
               <span
                 className={`absolute -left-[21px] top-3 inline-block h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-stone-900 ${AGENT_DOT[activity.agent] ?? "bg-stone-400"}`}
@@ -221,11 +238,7 @@ export function RunView({ runId }: { runId: string }) {
                     className="font-normal text-stone-400 dark:text-stone-500"
                     dateTime={activity.createdAt}
                   >
-                    {new Date(activity.createdAt).toLocaleTimeString("es", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                    })}
+                    {formatEventTime(activity.createdAt)}
                   </time>
                   {activity.durationMs != null && (
                     <span className="font-normal text-stone-400 dark:text-stone-500">
@@ -239,7 +252,7 @@ export function RunView({ runId }: { runId: string }) {
               </div>
             </li>
           ))}
-          {activities.length === 0 && (
+          {activitiesDesc.length === 0 && (
             <li className="text-sm text-stone-400 dark:text-stone-500">
               Sin actividad todavía.
             </li>

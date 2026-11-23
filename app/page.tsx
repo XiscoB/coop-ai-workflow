@@ -5,6 +5,7 @@ import { ActiveRunCard } from "@/components/active-run-card";
 import { RecentRuns } from "@/components/recent-runs";
 import { RequestForm } from "@/components/request-form";
 import { SandboxStatusCard } from "@/components/sandbox-status";
+import { WelcomeModal } from "@/components/welcome-modal";
 
 export default function DashboardPage() {
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
@@ -12,6 +13,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-4">
+      <WelcomeModal />
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <RequestForm
           hasActiveRun={activeRunId !== null}

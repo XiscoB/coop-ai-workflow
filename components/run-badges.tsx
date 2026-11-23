@@ -1,6 +1,6 @@
 export const AGENT_LABEL: Record<string, string> = {
   orchestrator: "Orquestador",
-  develop: "Develop",
+  develop: "Developer",
   testing: "Testing",
   system: "Sistema",
 };
