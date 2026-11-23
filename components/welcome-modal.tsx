@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { IMPROVEMENTS } from "@/components/about-content";
+import { IMPROVEMENTS, TECH_NOTE } from "@/components/about-content";
 
 const SEEN_KEY = "coopai-welcome-seen";
 
@@ -62,6 +62,13 @@ export function WelcomeModal() {
             <li key={improvement}>{improvement}</li>
           ))}
         </ol>
+
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/40">
+          <p className="mb-1 text-xs font-bold text-blue-900 dark:text-blue-200">
+            Nota técnica sobre la demo desplegada
+          </p>
+          <p className="text-xs text-blue-900 dark:text-blue-200">{TECH_NOTE}</p>
+        </div>
 
         <div className="flex items-center justify-between gap-3">
           <Link

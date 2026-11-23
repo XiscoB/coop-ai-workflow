@@ -1,5 +1,8 @@
 /** Contenido de «Acerca de» compartido por la página y el popup de bienvenida. */
 
+export const TECH_NOTE =
+  "La aplicación es completamente funcional y la capa de inferencia está desacoplada del resto del sistema. Para ofrecer una prueba web inmediata y sin coste de infraestructura, la demo está conectada a la API gratuita de Groq; en local puede ejecutarse sobre Ollama con modelos ligeros (p. ej. qwen2.5-coder:7b). Estos modelos gratuitos y compactos tienen limitaciones reales — ritmo de peticiones muy restringido, razonamiento limitado y respuestas ocasionalmente inconsistentes — que durante el desarrollo han obligado a reforzar la capa de inferencia con reintentos dinámicos, ritmo adaptativo y validación defensiva. Precisamente ahí está parte del valor demostrado: la arquitectura, la integración y el flujo end-to-end están probados y son agnósticos al proveedor, listos para escalar a modelos comerciales de mayor calibre (Claude / OpenAI) o a despliegues dedicados según las necesidades del negocio.";
+
 export const FEATURES = [
   "Equipo de 3 agentes de IA: Orquestador (divide en tareas), Developer (modifica la web de verdad) y Testing (checks automáticos + revisión, con bucle de corrección).",
   "Motor por pasos persistido: las ejecuciones sobreviven a cierres de pestaña y a cortes del servicio de IA.",

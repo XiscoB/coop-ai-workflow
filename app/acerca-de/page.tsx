@@ -1,4 +1,4 @@
-import { FEATURES, IMPROVEMENTS } from "@/components/about-content";
+import { FEATURES, IMPROVEMENTS, TECH_NOTE } from "@/components/about-content";
 
 export const dynamic = "force-static";
 
@@ -27,6 +27,13 @@ export default function AcercaDePage() {
             <li key={feature}>{feature}</li>
           ))}
         </ul>
+      </section>
+
+      <section className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/40">
+        <h2 className="mb-2 text-lg font-bold text-blue-900 dark:text-blue-200">
+          Nota técnica sobre la demo desplegada
+        </h2>
+        <p className="text-sm text-blue-900 dark:text-blue-200">{TECH_NOTE}</p>
       </section>
 
       <section>
