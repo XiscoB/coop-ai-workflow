@@ -1,68 +1,70 @@
 # Plan de entrega
 
-Estado: **implementado y validado en local** (2026-11-23); pendiente solo el despliegue en Vercel.
+Estado: **implementado y validado** (local + Neon en la nube, 2026-11-23);
+despliegue en Vercel en curso.
 
-## Decisiones técnicas propuestas
+## Decisiones técnicas
 
-| Área | Propuesta | Motivo |
+| Área | Decisión | Motivo |
 |---|---|---|
-| Framework | Next.js (App Router, última versión estable) | Requisito del encargo |
-| Despliegue | Vercel | Requisito del encargo; integración nativa con Next.js |
-| Base de datos | **Propuesta: Neon (Postgres serverless)** o Supabase | Plan gratuito, maduro, fácil de conectar desde Vercel. Decisión final al arrancar la fase de spec |
-| LLM | Doble modo: **local** (Ollama) y **API compatible con OpenAI** (DeepSeek, Kimi, OpenAI, OpenRouter…) | Patrón ya validado en otro proyecto nuestro; detalle completo en `arquitectura-llm.md` |
-| Estado en pantalla | Streaming (SSE / React Server Components) | Se ve en vivo qué hace cada agente y el estado de cada tarea |
-| Agente de codificación | **Kimi Code** (ver `como-usamos-la-ia.md`) | El encargo pide Claude Code o Codex; usamos Kimi Code y lo explicamos |
-
-> El diseño del modo local / API keys (`arquitectura-llm.md`) ya está alineado
-> con el patrón validado en producción de otro proyecto nuestro.
+| Framework | Next.js (App Router, TypeScript) | Requisito del encargo |
+| Despliegue | Vercel (plan gratuito) | Requisito del encargo; integración nativa con Next.js |
+| Base de datos | Neon Postgres (tier gratuito) + Drizzle ORM | Serverless-friendly, maduro, gratuito. Driver HTTP en producción, TCP en local |
+| LLM | Doble modo: **local** (Ollama) y **API compatible con OpenAI** (Groq, DeepSeek, OpenAI, OpenRouter…) | Patrón validado en producción en otro proyecto del equipo; detalle en `arquitectura-llm.md` |
+| Actualización en vivo | Motor por pasos + polling (1,5 s) | Las ejecuciones duran minutos y los límites de funciones serverless del plan gratuito (~60 s) no admiten procesos largos ni SSE fiable |
+| Agente de codificación | **Kimi Code** (ver `como-usamos-la-ia.md`) | El encargo sugiere Claude Code o Codex; se optó por Kimi Code, con integración nativa de Spec Kit |
 
 ## Flujo de trabajo (Spec Kit)
 
-Al arrancar el proyecto, en este orden:
+El proyecto se construyó siguiendo el flujo completo de spec-driven development:
 
-1. `/skill:speckit-constitution` — principios (calidad, simplicidad, cero secretos en repo, demo primero).
-2. `/skill:speckit-specify` — especificación del sistema de 3 agentes a partir de `requisitos.md`.
-3. `/skill:speckit-clarify` — resolver ambigüedades (alcance del "desarrollo" que hace Develop, criterios de Testing, persistencia).
-4. `/skill:speckit-plan` — plan técnico (Next.js, BD elegida, streaming, modo local/API).
-5. `/skill:speckit-checklist` — checklist de calidad de los requisitos.
-6. `/skill:speckit-tasks` — desglose en tareas.
-7. `/skill:speckit-analyze` — coherencia entre artefactos.
-8. `/skill:speckit-implement` — implementación.
+1. `speckit-constitution` — principios (calidad, simplicidad, cero secretos, coste cero, demo primero).
+2. `speckit-specify` — especificación del sistema de 3 agentes (2 aclaraciones resueltas con el equipo).
+3. `speckit-plan` — plan técnico con 9 decisiones de research documentadas (D1–D9).
+4. `speckit-tasks` — 38 tareas organizadas por user story.
+5. `speckit-analyze` — análisis cruzado: 2 inconsistencias detectadas y remediadas antes de implementar.
+6. `speckit-implement` — implementación y validación.
+
+Las mejoras posteriores (centro de control, recuperación, configuración y UX)
+siguieron el mismo flujo como specs 002, 003 y 004 (`specs/`).
 
 ## Checklist de entregables
 
 - [ ] App desplegada en Vercel con URL pública
-- [ ] Repositorio público en GitHub (este repo: `coop-ai-workflow`)
-- [ ] Usuario y contraseña de prueba (login sencillo: `APP_USER`/`APP_PASSWORD` del despliegue)
-- [x] Respuestas a las 4 preguntas cortas (borrador abajo; pulir con los datos reales del despliegue)
+- [x] Repositorio público en GitHub: [XiscoB/coop-ai-workflow](https://github.com/XiscoB/coop-ai-workflow)
+- [x] Usuario y contraseña de prueba (login compartido; se entrega junto a la URL)
+- [x] Respuestas a las 4 preguntas cortas (redactadas abajo)
 - [x] README final con instrucciones de arranque local y despliegue
 - [x] `.env.example` documentado; ninguna clave real en el repo
 - [x] Documentado cómo se usó el agente de IA (`como-usamos-la-ia.md`)
 
 ## Estado de validación (2026-11-23)
 
-- [x] `npm test` — 32/32 en verde (capa LLM, checks de sandbox, motor con store en memoria)
+- [x] `npm test` — 50/50 en verde (capa LLM, checks de sandbox, motor, recuperación, config, auth)
 - [x] `npm run build` — build de producción en verde
-- [x] V1 acceso: middleware redirige a /login sin sesión (307), API responde 401, login fija cookie y la verifica
-- [x] V2 proveedor IA: detección `auto` contra Ollama real (`qwen2.5-coder:7b`) y sonda de completion real OK, coste 0
-- [x] Errores limpios sin BD: `503 DB_UNAVAILABLE` con mensaje claro
-- [x] V3 bucle completo en vivo (Ollama `qwen2.5-coder:7b` + Postgres Docker): petición «Añade una página de contacto» → 5/5 tareas completadas, informe final, `contacto.html` con formulario enlazada desde `index.html`
-- [x] V5 historial: la ejecución y su detalle consultables tras terminar
-- [x] V6 reset del sandbox: re-siembra los 5 ficheros y `contacto.html` desaparece (404)
-- [x] Validación completa contra **Neon en la nube** (2026-11-23): `db:push` OK y ejecución E2E real con Ollama — 6/6 tareas completadas, informe final, `/site/contacto.html` servido desde Neon (200) e historial OK. Stack idéntico al de producción (driver serverless HTTP)
-- [ ] V7 despliegue en Vercel (pendiente: cuenta/importación del usuario)
+- [x] Acceso: middleware redirige a /login sin sesión (307), API responde 401, cookie firmada verificada
+- [x] Proveedor IA: detección `auto` contra Ollama real (`qwen2.5-coder:7b`) y sonda de completion real OK, coste 0
+- [x] Bucle completo en vivo (Ollama + Postgres): «Añade una página de contacto» → tareas completadas, informe final y `contacto.html` enlazada desde `index.html`
+- [x] Validación completa contra Neon en la nube (stack idéntico a producción): ejecución E2E 6/6 tareas, `/site/contacto.html` servido desde Neon, historial OK
+- [x] Seguridad: rate limit de login (429 al 6º intento), key de API siempre enmascarada, CSP sobre el sandbox, headers de seguridad
+- [ ] V7 despliegue en Vercel (en curso)
 
 ## Las 4 preguntas cortas
 
-Las preguntas exactas se conocerán al entregar. Respuestas previsibles a preparar
-(borrador, a completar durante el desarrollo):
+Las preguntas exactas se conocerán al entregar. Respuestas preparadas:
 
-1. **¿Cómo usaste Claude Code / Codex?** → Usamos Kimi Code con Spec Kit
-   (spec-driven development). Ver `como-usamos-la-ia.md`.
-2. **¿Cómo se reparten el trabajo los agentes?** → Orquestador descompone y
-   asigna; Develop implementa; Testing verifica en bucle hasta que todo pasa.
-3. **¿Cómo persistís el estado?** → Base de datos gratuita (Neon/Supabase);
-   cada tarea y mensaje de agente queda registrado.
-4. **¿Cómo funcionaría sin gastar dinero / en local?** → Modo local con
-   Ollama; modo API externa (cualquier API compatible con OpenAI) para
-   producción. Ver `arquitectura-llm.md`.
+1. **¿Cómo usaste Claude Code / Codex?** → El proyecto se construyó con Kimi Code
+   (agente de codificación de la misma categoría) siguiendo spec-driven
+   development con GitHub Spec Kit: toda la planificación está versionada en el
+   repo. Detalle completo en `como-usamos-la-ia.md`.
+2. **¿Cómo se reparten el trabajo los agentes?** → El Orquestador descompone la
+   petición en tareas con criterio de aceptación; Developer las ejecuta sobre la
+   web de ejemplo; Testing las verifica (checks automáticos + revisión) y las
+   devuelve en bucle hasta que todo pasa o se agota el límite de ciclos.
+3. **¿Cómo persistís el estado?** → Todo vive en Postgres (Neon, tier gratuito):
+   ejecuciones, tareas, timeline de actividad por agente, sandbox de la web y
+   ajustes de configuración.
+4. **¿Cómo funcionaría sin gastar dinero?** → La app funciona completa en local
+   con Ollama (coste cero, demostrado en la validación) y en producción con
+   tiers gratuitos de API (Groq, Google AI Studio…). Infraestructura: planes
+   gratuitos de Vercel y Neon.

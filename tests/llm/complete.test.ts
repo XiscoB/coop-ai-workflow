@@ -4,7 +4,10 @@ import {
   LLMError,
   parseJsonDefensive,
 } from "@/lib/llm/complete";
-import { OpenAiCompatibleClient } from "@/lib/llm/openai-compatible";
+import {
+  HttpError,
+  OpenAiCompatibleClient,
+} from "@/lib/llm/openai-compatible";
 
 describe("parseJsonDefensive", () => {
   it("parsea JSON limpio", () => {
@@ -110,6 +113,58 @@ describe("OpenAiCompatibleClient (fallback de parámetros ante 400)", () => {
     await call2(0.3);
     const last = JSON.parse(bodies[bodies.length - 1]);
     expect(last).not.toHaveProperty("temperature");
+  });
+
+  it("también retira response_format si el proveedor lo rechaza con 400", async () => {
+    const bodies: string[] = [];
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(async (_url: string, init: RequestInit) => {
+        bodies.push(String(init.body));
+        return new Response('{"error": "response_format not supported"}', {
+          status: 400,
+        });
+      })
+      .mockImplementation(async (_url: string, init: RequestInit) => {
+        bodies.push(String(init.body));
+        return jsonResponse({
+          choices: [{ message: { content: '{"ok": true}' } }],
+        });
+      });
+
+    const client = new OpenAiCompatibleClient(
+      "https://api.example.com/v1",
+      "modelo-x",
+      "key",
+      fetchMock,
+    );
+
+    const content = await client.call("system", "prompt")(0.1);
+    expect(content).toBe('{"ok": true}');
+    expect(JSON.parse(bodies[0])).toHaveProperty("response_format");
+    expect(JSON.parse(bodies[1])).not.toHaveProperty("response_format");
+  });
+
+  it("respeta el Retry-After del proveedor ante un 429 (vía completeWithRetries)", async () => {
+    vi.useFakeTimers();
+    try {
+      const http429 = new HttpError(
+        429,
+        "HTTP 429: rate limit",
+        0.01, // retryAfterSeconds
+      );
+      const call = vi
+        .fn()
+        .mockRejectedValueOnce(http429)
+        .mockResolvedValue('{"ok": true}');
+
+      const promise = completeWithRetries(call, {});
+      await vi.runAllTimersAsync();
+      await expect(promise).resolves.toEqual({ ok: true });
+      expect(call).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("lanza LLMError con el cuerpo del error HTTP", async () => {

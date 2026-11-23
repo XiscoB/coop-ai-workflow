@@ -12,6 +12,7 @@ export const FEATURES = [
 
 export const IMPROVEMENTS = [
   "Pulir la UI: más pulido visual y de interacción en general (animaciones, estados vacíos, responsive fino, accesibilidad).",
+  "Robustez ante tiers gratuitos: seguir puliendo el manejo de las limitaciones de los modelos gratuitos (rate limits, respuestas vacías, modelos retirados o movidos de tier) con reintentos inteligentes y fallback entre modelos/proveedores.",
   "Vista previa en vivo: ver en la propia pantalla de la ejecución cómo queda la web mientras Developer la modifica (render actualizado tras cada cambio de fichero, junto a la actividad).",
   "Human-in-the-loop: revisar, editar o eliminar tareas del plan del Orquestador antes de ejecutarlo.",
   "Visor de diffs: ver el antes/después de cada fichero que toca Developer, directamente en la tarjeta de la tarea.",

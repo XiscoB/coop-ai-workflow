@@ -206,7 +206,7 @@ export default function ConfiguracionPage() {
               type="text"
               value={form.llm_api_model}
               onChange={(e) => setForm({ ...form, llm_api_model: e.target.value })}
-              placeholder="llama-3.3-70b-versatile"
+              placeholder="openai/gpt-oss-120b"
               className="w-72 rounded border border-stone-300 px-3 py-2 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
             />
           </label>

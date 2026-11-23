@@ -8,6 +8,10 @@ export interface CompleteOptions {
 export type RawCall = (temperature: number) => Promise<string>;
 
 export const BACKOFF_SECONDS = [2, 5, 10] as const;
+/** Intentos extra cuando el proveedor pide Retry-After (429): la ventana TPM
+ * es de 60 s y tres intentos no siempre la cruzan. */
+const MAX_ATTEMPTS_429 = 6;
+const MAX_WAIT_429_SECONDS = 45;
 export const TIMEOUT_MS = 120_000;
 
 export function parseJsonDefensive(raw: string): Record<string, unknown> {
@@ -34,8 +38,11 @@ export async function completeWithRetries(
   const temperature = options.temperature ?? 0.1;
   const required = options.requiredKeys ?? [];
   let lastError: unknown = null;
+  let saw429 = false;
 
-  for (let attempt = 0; attempt < BACKOFF_SECONDS.length; attempt++) {
+  for (let attempt = 0; ; attempt++) {
+    const maxAttempts = saw429 ? MAX_ATTEMPTS_429 : BACKOFF_SECONDS.length;
+    if (attempt >= maxAttempts) break;
     try {
       const raw = await call(temperature);
       const data = parseJsonDefensive(raw);
@@ -48,14 +55,23 @@ export async function completeWithRetries(
       return data;
     } catch (error) {
       lastError = error;
-      if (attempt < BACKOFF_SECONDS.length - 1) {
-        await sleep(BACKOFF_SECONDS[attempt] * 1000);
+      const retryAfter = (error as { retryAfterSeconds?: number })
+        .retryAfterSeconds;
+      if (retryAfter !== undefined) saw429 = true;
+      const maxAttempts = saw429 ? MAX_ATTEMPTS_429 : BACKOFF_SECONDS.length;
+      if (attempt < maxAttempts - 1) {
+        // Si el proveedor pide una espera concreta (429 Retry-After), se
+        // respeta (tope 45 s); si no, backoff fijo 2/5/10 s.
+        const waitSeconds =
+          retryAfter !== undefined
+            ? Math.min(retryAfter, MAX_WAIT_429_SECONDS)
+            : BACKOFF_SECONDS[Math.min(attempt, BACKOFF_SECONDS.length - 1)];
+        await sleep(waitSeconds * 1000);
       }
     }
   }
 
   const reason = lastError instanceof Error ? lastError.message : String(lastError);
-  throw new LLMError(
-    `el LLM falló tras ${BACKOFF_SECONDS.length} intentos: ${reason}`,
-  );
+  const attempts = saw429 ? MAX_ATTEMPTS_429 : BACKOFF_SECONDS.length;
+  throw new LLMError(`el LLM falló tras ${attempts} intentos: ${reason}`);
 }
