@@ -193,7 +193,7 @@ export function RunView({ runId }: { runId: string }) {
                       : "Reintentar tareas falladas"}
                 </button>
               )}
-              {run.sandboxSnapshot && (
+              {run.sandboxSnapshot && !run.revertedAt && (
                 <button
                   onClick={onRevert}
                   disabled={recovering}
@@ -202,6 +202,12 @@ export function RunView({ runId }: { runId: string }) {
                   {recovering && <Spinner small />}
                   Revertir cambios
                 </button>
+              )}
+              {run.revertedAt && (
+                <span className="rounded-full bg-stone-200 px-3 py-1 text-xs font-medium text-stone-600 dark:bg-stone-700 dark:text-stone-300">
+                  Cambios revertidos ·{" "}
+                  {new Date(run.revertedAt).toLocaleString("es")}
+                </span>
               )}
               {recoveryMsg && (
                 <span className="text-sm text-stone-600 dark:text-stone-400">

@@ -46,6 +46,7 @@ export interface Store {
         | "errorMessage"
         | "finishedAt"
         | "sandboxSnapshot"
+        | "revertedAt"
       >
     >,
   ): Promise<void>;

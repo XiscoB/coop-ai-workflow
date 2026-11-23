@@ -15,6 +15,7 @@ export interface RunPayload {
     errorMessage: string | null;
     providerSnapshot: string | null;
     sandboxSnapshot: Record<string, string> | null;
+    revertedAt: string | null;
     createdAt: string;
     finishedAt: string | null;
   };

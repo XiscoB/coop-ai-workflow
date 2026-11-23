@@ -40,6 +40,7 @@ export function createMemoryStore(seedFiles: SeedFile[] = []): Store {
         providerSnapshot: data.providerSnapshot,
         sandboxSnapshot: null,
         lockedAt: null,
+        revertedAt: null,
         createdAt: now,
         finishedAt: null,
       };

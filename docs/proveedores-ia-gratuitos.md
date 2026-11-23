@@ -1,10 +1,32 @@
-# Proveedores de IA gratuitos para el despliegue
+# Proveedores de IA: evaluación y decisión final
+
+> Documento vivo del proceso de selección de proveedor para el despliegue.
+
+## Decisión final (2026-11-23)
+
+Tras evaluar los tiers gratuitos en producción real, la demo desplegada usa:
+
+- **Primario: DeepSeek** (`https://api.deepseek.com/v1`, `deepseek-chat`) —
+  API de pago prepago de coste mínimo (~céntimos por ejecución completa), sin
+  los rate limits de los tiers gratuitos, compatible con OpenAI.
+- **Respaldo automático: Groq** (`https://api.groq.com/openai/v1`,
+  `openai/gpt-oss-20b`, tier gratuito) — si el primario falla, la llamada salta
+  al respaldo y el cambio queda registrado en el timeline.
+- **Local: Ollama** (`qwen2.5-coder:7b`) — coste cero para desarrollo.
+
+Motivo: los tiers gratuitos de Groq (8K TPM) y Mistral (caps por org) hacían la
+demo lenta e intermitente bajo carga real; por un coste marginal, DeepSeek da
+fiabilidad de producción. El trabajo de robustez hecho para los free tiers
+(reintentos, pacing, fallback, sonda) queda como valor del sistema, no como
+necesidad.
+
+---
+
+## Evaluación de tiers gratuitos (histórico)
 
 > Fuente: [itsfree.ai](https://itsfree.ai/) (directorio verificado de tiers
 > gratuitos, consultado el 2026-11-23). Los límites cambian con el tiempo:
-> confirmar el tier vigente antes de entregar.
-
-## Contexto
+> confirmar el tier vigente antes de usarlo.
 
 En Vercel el modo local (Ollama) no es alcanzable, así que la demo pública
 necesita una **API externa gratuita**. Nuestra capa `lib/llm/openai-compatible.ts`

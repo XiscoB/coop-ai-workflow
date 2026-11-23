@@ -3,7 +3,12 @@ import type { Store } from "@/lib/store";
 
 export class RecoveryError extends Error {
   constructor(
-    public readonly code: "RUN_NOT_FOUND" | "NOT_RESUMABLE" | "RUN_IN_PROGRESS" | "NO_SNAPSHOT",
+    public readonly code:
+      | "RUN_NOT_FOUND"
+      | "NOT_RESUMABLE"
+      | "RUN_IN_PROGRESS"
+      | "NO_SNAPSHOT"
+      | "ALREADY_REVERTED",
     message: string,
   ) {
     super(message);
@@ -76,6 +81,13 @@ export async function revertRun(store: Store, runId: string): Promise<Run> {
   const run = await store.getRun(runId);
   if (!run) throw new RecoveryError("RUN_NOT_FOUND", "Ejecución no encontrada.");
 
+  if (run.revertedAt) {
+    throw new RecoveryError(
+      "ALREADY_REVERTED",
+      "Esta ejecución ya fue revertida anteriormente.",
+    );
+  }
+
   const snapshot = run.sandboxSnapshot as Record<string, string> | null;
   if (!snapshot || typeof snapshot !== "object") {
     throw new RecoveryError(
@@ -95,6 +107,7 @@ export async function revertRun(store: Store, runId: string): Promise<Run> {
   await store.sandboxReset(
     Object.entries(snapshot).map(([path, content]) => ({ path, content })),
   );
+  await store.updateRun(run.id, { revertedAt: new Date() });
 
   await store.addActivity({
     runId: run.id,
@@ -104,5 +117,6 @@ export async function revertRun(store: Store, runId: string): Promise<Run> {
       "Cambios revertidos: la web ha vuelto al estado previo a esta ejecución.",
   });
 
-  return run;
+  const updated = await store.getRun(runId);
+  return updated ?? run;
 }

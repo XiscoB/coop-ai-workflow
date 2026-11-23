@@ -176,6 +176,28 @@ describe("revertRun (revertir cambios)", () => {
     });
     await expect(revertRun(store, run.id)).rejects.toThrow(/en curso/);
   });
+
+  it("marca la ejecución como revertida y bloquea un segundo revert", async () => {
+    const store = createMemoryStore(SEED);
+    const run = await store.createRun({
+      request: "x",
+      maxCycles: 5,
+      providerSnapshot: "test",
+    });
+    await store.updateRun(run.id, {
+      status: "completed",
+      sandboxSnapshot: { "/index.html": "<html>viejo</html>" },
+      finishedAt: new Date(),
+    });
+
+    const reverted = await revertRun(store, run.id);
+    expect(reverted.revertedAt).not.toBeNull();
+    expect(await store.sandboxRead("/index.html")).toBe("<html>viejo</html>");
+
+    await expect(revertRun(store, run.id)).rejects.toThrow(
+      /ya fue revertida/,
+    );
+  });
 });
 
 describe("resume desde completed_with_failures", () => {
