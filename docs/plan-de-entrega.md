@@ -33,7 +33,7 @@ siguieron el mismo flujo como specs 002, 003 y 004 (`specs/`).
 - [x] App desplegada en Vercel: [coop-ai-workflow.vercel.app](https://coop-ai-workflow.vercel.app) (validada en producción)
 - [x] Repositorio público en GitHub: [XiscoB/coop-ai-workflow](https://github.com/XiscoB/coop-ai-workflow)
 - [x] Usuario y contraseña de prueba (login compartido; se entrega junto a la URL)
-- [x] Respuestas a las 4 preguntas cortas (redactadas abajo)
+- [x] Respuestas a las 4 preguntas cortas (perfil profesional; redactadas abajo)
 - [x] README final con instrucciones de arranque local y despliegue
 - [x] `.env.example` documentado; ninguna clave real en el repo
 - [x] Documentado cómo se usó el agente de IA (`como-usamos-la-ia.md`)
@@ -52,20 +52,20 @@ siguieron el mismo flujo como specs 002, 003 y 004 (`specs/`).
 
 ## Las 4 preguntas cortas
 
-Las preguntas exactas se conocerán al entregar. Respuestas preparadas:
+Las preguntas del formulario de entrega eran de **perfil profesional del
+candidato** (experiencia con integraciones externas, apps publicadas, sistemas
+multi-agente y gestión de alcance con clientes), no sobre este proyecto, y se
+respondieron por el canal de entrega. Por privacidad, no se publican en este
+repositorio.
 
-1. **¿Cómo usaste Claude Code / Codex?** → El proyecto se construyó con Kimi Code
-   (agente de codificación de la misma categoría) siguiendo spec-driven
-   development con GitHub Spec Kit: toda la planificación está versionada en el
-   repo. Detalle completo en `como-usamos-la-ia.md`.
-2. **¿Cómo se reparten el trabajo los agentes?** → El Orquestador descompone la
-   petición en tareas con criterio de aceptación; Developer las ejecuta sobre la
-   web de ejemplo; Testing las verifica (checks automáticos + revisión) y las
-   devuelve en bucle hasta que todo pasa o se agota el límite de ciclos.
-3. **¿Cómo persistís el estado?** → Todo vive en Postgres (Neon, tier gratuito):
-   ejecuciones, tareas, timeline de actividad por agente, sandbox de la web y
-   ajustes de configuración.
-4. **¿Cómo funcionaría sin gastar dinero?** → La app funciona completa en local
-   con Ollama (coste cero, demostrado en la validación) y en producción con
-   tiers gratuitos de API (Groq, Google AI Studio…). Infraestructura: planes
-   gratuitos de Vercel y Neon.
+Para cualquier detalle técnico sobre la demo, la documentación del proyecto
+está en `README.md` y `docs/` (arquitectura LLM, cómo se construyó con
+Kimi Code + Spec Kit, y estado de validación).
+### Nota técnica sobre la demo desplegada (incluida en la entrega)
+
+Demo completamente funcional con la capa de inferencia desacoplada mediante un patrón multi-proveedor con fallback:
+
+- Para las pruebas web utiliza la API de **DeepSeek** como motor principal, respaldada por un proveedor secundario de contingencia (**Groq**) para garantizar disponibilidad continua sin incurrir en costes desmedidos de infraestructura para una PoC.
+- El backend está desacoplado y preparado para conectarse a inferencia local soberana vía **Ollama** (p. ej. `qwen2.5-coder:7b`) para escenarios que exijan privacidad estricta o ejecución sin costes recurrentes de API.
+
+Estos tiers y modelos compactos están dimensionados para validar el flujo funcional de la demo y no para cargas pesadas de producción; la arquitectura base y la integración end-to-end están probadas y listas para escalar a modelos comerciales de mayor capacidad si el caso de uso lo requiere.
