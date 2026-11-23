@@ -32,9 +32,56 @@ versionados en el repo:
 Ventaja para el revisor: el razonamiento queda en el repositorio
 (`.specify/`, `specs/`), no solo en un historial de chat.
 
-## Registro de uso (a completar durante el desarrollo)
+## Registro de uso (durante el desarrollo)
 
-- [ ] Prompts clave usados en cada fase
-- [ ] Decisiones que propuso la IA y aceptamos / rechazamos (y por qué)
-- [ ] Problemas que resolvió de forma autónoma
-- [ ] Intervenciones manuales necesarias
+### Fases y prompts clave
+
+- **Preparación**: se leyó el encargo y se montó el repo con
+  `specify init --integration kimi` (Spec Kit 1.2.2) sin escribir una línea de
+  aplicación: primero documentación (`docs/`), constitución y decisión de stack.
+- **Constitution**: 6 principios, 3 de ellos NON-NEGOTIABLE (spec-driven, coste
+  cero, cero secretos). Todo el diseño posterior se verifica contra ellos en cada
+  fase (gate de la skill de plan).
+- **Specify**: la spec se escribió en lenguaje de producto con 2 marcadores de
+  aclaración que el humano resolvió (Develop trabaja sobre una mini-web sandbox;
+  login con credencial compartida para proteger el gasto de la API key).
+- **Plan**: 9 decisiones de research documentadas con alternativas (D1–D9). Las
+  más importantes:
+  - **Motor por pasos** (D2): una ejecución de agentes dura minutos y no cabe en
+    una función serverless del plan Hobby (~60 s); máquina de estados persistida,
+    un paso por invocación, conducida por la propia UI.
+  - **Sandbox en BD** (D4): el filesystem de Vercel es de solo lectura, así que la
+    mini-web vive en Postgres y se sirve con content-type real en `/site/*`.
+  - **Testing híbrido** (D5): checks deterministas gratuitos + juicio del LLM solo
+    para lo cualitativo.
+- **Tasks + Analyze**: 38 tareas organizadas por user story; el análisis cruzado
+  detectó 2 inconsistencias MEDIUM (un edge case que contradecía D2 y el formato
+  de `acceptance_check` sin cerrar) y se remediaron antes de implementar.
+
+### Decisiones que propuso la IA y aceptamos / corregimos
+
+- **Aceptada**: inyectar el acceso a datos tras una interfaz `Store` (Drizzle en
+  producción, en memoria en tests) — permitió 32 tests del motor sin base de datos.
+- **Corregida por los tests**: el primer test del motor detectó roles confundidos
+  en el doble de prueba (el prompt de Testing menciona a «Develop»); se corrigió
+  la detección y quedó como caso regresión.
+- **Corregida en validación en vivo**: la primera sesión de humo sirvió la app con
+  un servidor viejo sin variables de entorno y la cookie se verificaba contra un
+  secreto vacío; se aislaron los servidores dev y se añadió el código de error
+  `DB_UNAVAILABLE` (503 limpio) tras observar un 500 crudo al probar sin BD.
+
+### Lo que la IA resolvió de forma autónoma
+
+- Toda la mecánica de la capa LLM del patrón de referencia (backoff 2/5/10,
+  parsing defensivo, fallback de parámetros ante HTTP 400, sonda real) portada a
+  TypeScript sin SDKs, con tests que cubren los casos de fallo históricos.
+- Detección de proveedor auto/local/api validada en vivo contra Ollama real
+  (`qwen2.5-coder:7b`): detección, sonda y badge de proveedor en la UI.
+
+### Intervenciones manuales necesarias
+
+- Resolución de las 2 aclaraciones de la spec (alcance de Develop y auth).
+- Credenciales y entorno (`.env.local`, cuenta de Neon, despliegue en Vercel):
+  por seguridad, siempre las introduce el humano.
+- Arranque de Docker Desktop para la base de datos local de validación
+  (requiere interacción en la máquina del usuario).

@@ -90,6 +90,13 @@ Restablece la mini-web al estado semilla (D9). Solo sin ejecución activa.
 Lista y contenido de la mini-web actual (alimenta la vista `/preview` y el panel
 de cambios de Develop).
 
+## `GET /site/[[...path]]`
+
+Sirve la mini-web desde la BD con content-type real (`text/html`, `text/css`…),
+para que `/preview` la muestre navegable en un iframe: los enlaces relativos
+entre páginas funcionan al convivir bajo el prefijo `/site/`. Sin ruta →
+`/index.html`. 404 si el fichero no existe.
+
 ## Contrato de pasos del motor (interno, `lib/engine`)
 
 `advance(runId)` ejecuta exactamente uno de estos pasos y persiste el resultado:

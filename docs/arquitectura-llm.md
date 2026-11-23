@@ -105,3 +105,10 @@ Overrides por agente (`ORCHESTRATOR_MODEL`, `DEVELOP_MODEL`, `TESTING_MODEL`)
 para mezclar proveedores o calibres: p. ej. Orquestador con un modelo cloud
 potente y Testing con un modelo local rápido. Por defecto, todos heredan el
 modelo del proveedor activo.
+
+## 8. Proveedores gratuitos para el despliegue
+
+En Vercel no hay Ollama alcanzable: la demo pública usa una API externa con
+tier gratuito (Groq, Google AI Studio, OpenRouter…). Candidatos, límites,
+URLs base y avisos en `docs/proveedores-ia-gratuitos.md` (fuente:
+[itsfree.ai](https://itsfree.ai/), directorio verificado de tiers gratuitos).

@@ -31,3 +31,4 @@ Thumbs.db
 *.pem
 .vscode/
 .idea/
+.neon

@@ -1,6 +1,6 @@
 # Plan de entrega
 
-Estado: **preparación** (el proyecto aún no se ha empezado; este documento fija el plan).
+Estado: **implementado y validado en local** (2026-11-23); pendiente solo el despliegue en Vercel.
 
 ## Decisiones técnicas propuestas
 
@@ -33,11 +33,24 @@ Al arrancar el proyecto, en este orden:
 
 - [ ] App desplegada en Vercel con URL pública
 - [ ] Repositorio público en GitHub (este repo: `coop-ai-workflow`)
-- [ ] Usuario y contraseña de prueba (si hace falta auth)
-- [ ] Respuestas a las 4 preguntas cortas
-- [ ] README final con instrucciones de arranque local y despliegue
-- [ ] `.env.example` documentado; ninguna clave real en el repo
-- [ ] Documentado cómo se usó el agente de IA (`como-usamos-la-ia.md`)
+- [ ] Usuario y contraseña de prueba (login sencillo: `APP_USER`/`APP_PASSWORD` del despliegue)
+- [x] Respuestas a las 4 preguntas cortas (borrador abajo; pulir con los datos reales del despliegue)
+- [x] README final con instrucciones de arranque local y despliegue
+- [x] `.env.example` documentado; ninguna clave real en el repo
+- [x] Documentado cómo se usó el agente de IA (`como-usamos-la-ia.md`)
+
+## Estado de validación (2026-11-23)
+
+- [x] `npm test` — 32/32 en verde (capa LLM, checks de sandbox, motor con store en memoria)
+- [x] `npm run build` — build de producción en verde
+- [x] V1 acceso: middleware redirige a /login sin sesión (307), API responde 401, login fija cookie y la verifica
+- [x] V2 proveedor IA: detección `auto` contra Ollama real (`qwen2.5-coder:7b`) y sonda de completion real OK, coste 0
+- [x] Errores limpios sin BD: `503 DB_UNAVAILABLE` con mensaje claro
+- [x] V3 bucle completo en vivo (Ollama `qwen2.5-coder:7b` + Postgres Docker): petición «Añade una página de contacto» → 5/5 tareas completadas, informe final, `contacto.html` con formulario enlazada desde `index.html`
+- [x] V5 historial: la ejecución y su detalle consultables tras terminar
+- [x] V6 reset del sandbox: re-siembra los 5 ficheros y `contacto.html` desaparece (404)
+- [x] Validación completa contra **Neon en la nube** (2026-11-23): `db:push` OK y ejecución E2E real con Ollama — 6/6 tareas completadas, informe final, `/site/contacto.html` servido desde Neon (200) e historial OK. Stack idéntico al de producción (driver serverless HTTP)
+- [ ] V7 despliegue en Vercel (pendiente: cuenta/importación del usuario)
 
 ## Las 4 preguntas cortas
 
