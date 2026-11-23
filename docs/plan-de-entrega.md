@@ -61,6 +61,7 @@ repositorio.
 Para cualquier detalle técnico sobre la demo, la documentación del proyecto
 está en `README.md` y `docs/` (arquitectura LLM, cómo se construyó con
 Kimi Code + Spec Kit, y estado de validación).
+
 ### Nota técnica sobre la demo desplegada (incluida en la entrega)
 
 Demo completamente funcional con la capa de inferencia desacoplada mediante un patrón multi-proveedor con fallback:
