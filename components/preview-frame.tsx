@@ -15,7 +15,7 @@ export function PreviewFrame() {
         key={frameKey}
         src="/site/index.html"
         title="Web de ejemplo (mini-web sandbox)"
-        className="h-[70vh] w-full rounded-lg border border-stone-300 bg-white"
+        className="h-[70vh] w-full rounded-lg border border-stone-300 bg-white dark:border-stone-700"
       />
     </div>
   );

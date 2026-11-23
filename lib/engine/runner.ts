@@ -347,6 +347,17 @@ export async function advance(deps: EngineDeps, runId: string): Promise<Run> {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    // Ninguna tarea puede quedar en estado transitorio cuando la ejecución
+    // termina en error (SC-006): se marca como fallada con el motivo.
+    const runTasks = await store.getTasks(run.id);
+    for (const task of runTasks) {
+      if (task.status === "in_progress" || task.status === "in_review") {
+        await store.updateTask(task.id, {
+          status: "failed",
+          lastFailureReason: `La ejecución se detuvo: ${message}`,
+        });
+      }
+    }
     await store.addActivity({
       runId: run.id,
       agent: "system",

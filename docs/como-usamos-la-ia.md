@@ -85,3 +85,18 @@ Ventaja para el revisor: el razonamiento queda en el repositorio
   por seguridad, siempre las introduce el humano.
 - Arranque de Docker Desktop para la base de datos local de validación
   (requiere interacción en la máquina del usuario).
+
+### Hallazgos de la validación en vivo (posteriores)
+
+- **Ejecución real del usuario («hola mundo», Ollama 7B)**: tras 4 ciclos de
+  corrección, Develop devolvió 3 veces un JSON sin el campo `summary` (campo
+  descriptivo, no sustantivo) y la ejecución murió por él. Fix: `summary`
+  opcional con fallback generado desde los ficheros cambiados.
+- **Mismo incidente, segunda lectura**: la tarea quedó colgada en `in_progress`
+  pese a la ejecución terminal — el motor no limpiaba estados transitorios al
+  morir. Fix: al terminar en `error`, toda tarea `in_progress`/`in_review` pasa
+  a `failed` con el motivo (SC-006), con test de regresión y saneado de la fila
+  afectada en Neon.
+- Lección documentable para la entrega: los modelos pequeños degradan el JSON en
+  prompts largos (prompt + feedback acumulado); la capa defensiva debe distinguir
+  campos sustantivos de decorativos.

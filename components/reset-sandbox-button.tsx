@@ -34,11 +34,11 @@ export function ResetSandboxButton({ onReset }: { onReset: () => void }) {
       <button
         onClick={reset}
         disabled={loading}
-        className="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-100 disabled:opacity-50"
+        className="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-100 disabled:opacity-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
       >
         {loading ? "Restableciendo…" : "Restablecer web"}
       </button>
-      {message && <span className="text-sm text-stone-600">{message}</span>}
+      {message && <span className="text-sm text-stone-600 dark:text-stone-400">{message}</span>}
     </span>
   );
 }

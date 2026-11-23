@@ -38,13 +38,13 @@ function LoginForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="w-full max-w-sm rounded-lg border border-stone-300 bg-white p-6 shadow-sm"
+      className="w-full max-w-sm rounded-lg border border-stone-300 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900"
     >
-      <h1 className="mb-1 text-xl font-bold">Coop AI Workflow</h1>
-      <p className="mb-4 text-sm text-stone-600">
+      <h1 className="mb-1 text-xl font-bold dark:text-stone-100">Coop AI Workflow</h1>
+      <p className="mb-4 text-sm text-stone-600 dark:text-stone-400">
         Acceso con la credencial de prueba compartida.
       </p>
-      <label className="mb-3 block text-sm">
+      <label className="mb-3 block text-sm dark:text-stone-200">
         <span className="mb-1 block font-medium">Usuario</span>
         <input
           type="text"
@@ -52,10 +52,10 @@ function LoginForm() {
           onChange={(e) => setUser(e.target.value)}
           required
           autoComplete="username"
-          className="w-full rounded border border-stone-300 px-3 py-2"
+          className="w-full rounded border border-stone-300 px-3 py-2 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
         />
       </label>
-      <label className="mb-4 block text-sm">
+      <label className="mb-4 block text-sm dark:text-stone-200">
         <span className="mb-1 block font-medium">Contraseña</span>
         <input
           type="password"
@@ -63,18 +63,18 @@ function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="current-password"
-          className="w-full rounded border border-stone-300 px-3 py-2"
+          className="w-full rounded border border-stone-300 px-3 py-2 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
         />
       </label>
       {error && (
-        <p className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/60 dark:text-red-300">
           {error}
         </p>
       )}
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded bg-stone-800 px-4 py-2 font-medium text-white hover:bg-stone-700 disabled:opacity-50"
+        className="w-full rounded bg-stone-800 px-4 py-2 font-medium text-white hover:bg-stone-700 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
       >
         {loading ? "Entrando…" : "Entrar"}
       </button>

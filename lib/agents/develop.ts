@@ -50,7 +50,7 @@ Corrige exactamente ese fallo manteniendo el resto del trabajo.`;
   prompt += "\n\nEjecuta la tarea y devuelve los ficheros completos.";
 
   const data = await provider.complete(SYSTEM_PROMPT, prompt, {
-    requiredKeys: ["changes", "summary"],
+    requiredKeys: ["changes"],
   });
 
   const rawChanges = Array.isArray(data.changes) ? data.changes : [];
@@ -72,11 +72,15 @@ Corrige exactamente ese fallo manteniendo el resto del trabajo.`;
     );
   }
 
-  return {
-    changes,
-    summary:
-      typeof data.summary === "string"
-        ? data.summary
-        : "Cambios aplicados sin resumen.",
-  };
+  // `summary` es descriptivo, nunca bloqueante: si el modelo lo omite
+  // (típico en prompts largos de modelos pequeños), se genera uno a
+  // partir de los cambios aplicados.
+  const summary =
+    typeof data.summary === "string" && data.summary.trim() !== ""
+      ? data.summary
+      : `Cambios aplicados en ${changes.length} fichero(s): ${changes
+          .map((change) => change.path)
+          .join(", ")}.`;
+
+  return { changes, summary };
 }

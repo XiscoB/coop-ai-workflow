@@ -25,7 +25,7 @@ export function ProviderStatus() {
 
   if (!status) {
     return (
-      <span className="rounded-full bg-stone-200 px-3 py-1 text-xs text-stone-500">
+      <span className="rounded-full bg-stone-200 px-3 py-1 text-xs text-stone-500 dark:bg-stone-700 dark:text-stone-400">
         IA: comprobando…
       </span>
     );
@@ -34,7 +34,7 @@ export function ProviderStatus() {
   if (!status.provider) {
     return (
       <span
-        className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800"
+        className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300"
         title={status.warning ?? "Sin servicio de IA"}
       >
         IA: no configurada
@@ -46,8 +46,8 @@ export function ProviderStatus() {
     <span
       className={`rounded-full px-3 py-1 text-xs font-medium ${
         status.probe.ok
-          ? "bg-emerald-100 text-emerald-800"
-          : "bg-amber-100 text-amber-800"
+          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+          : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
       }`}
       title={status.probe.detail ?? `Modo ${status.mode}`}
     >

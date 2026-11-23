@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --ink: #17212b;
   --paper: #f7f5f0;
+}
+
+.dark {
+  --ink: #e7e5e4;
+  --paper: #161312;
 }
 
 body {

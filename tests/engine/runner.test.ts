@@ -210,4 +210,39 @@ describe("motor de ejecución (advance por pasos)", () => {
     expect(final.status).toBe("error");
     expect(final.errorMessage).toContain("No hay servicio de IA");
   });
+
+  it("un error a mitad de paso no deja tareas «en curso» (SC-006)", async () => {
+    const store = createMemoryStore(SEED);
+    const run = await store.createRun({
+      request: "Añade una página de contacto",
+      maxCycles: 5,
+      providerSnapshot: "test",
+    });
+
+    // El Orquestador funciona; Develop falla siempre (LLM caído a mitad).
+    const failing = fakeProvider({
+      orchestrator: PLAN_SCRIPT.orchestrator,
+      develop: () => {
+        throw new Error("el LLM falló tras 3 intentos");
+      },
+      testing: PLAN_SCRIPT.testing,
+    });
+    const deps = {
+      store,
+      resolveProvider: () => Promise.resolve(failing),
+    };
+
+    let current = await advance(deps, run.id); // orchestrate OK
+    current = await advance(deps, run.id); // develop explota
+
+    expect(current.status).toBe("error");
+    const tasks = await store.getTasks(run.id);
+    expect(
+      tasks.some(
+        (task) => task.status === "in_progress" || task.status === "in_review",
+      ),
+    ).toBe(false);
+    expect(tasks[0].status).toBe("failed");
+    expect(tasks[0].lastFailureReason).toContain("el LLM falló tras 3 intentos");
+  });
 });
