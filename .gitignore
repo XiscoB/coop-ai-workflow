@@ -1,0 +1,33 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.*
+
+# Next.js
+.next/
+out/
+build/
+
+# Producción
+*.tsbuildinfo
+next-env.d.ts
+
+# Entorno y secretos — NUNCA subir claves al repo
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# SO / editor
+.DS_Store
+Thumbs.db
+*.pem
+.vscode/
+.idea/
