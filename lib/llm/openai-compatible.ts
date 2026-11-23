@@ -22,6 +22,56 @@ function errorMessage(status: number, body: string): string {
   return `HTTP ${status}${short ? `: ${short}` : ""}`;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Ritmo dinámico entre llamadas («modo lento»): los tiers gratuitos limitan
+ * por tokens/minuto. Tras un 429 el ritmo sube a lo que pida el proveedor
+ * (escalando ×1,5 si se repite, tope 60 s) y baja a la mitad con cada éxito,
+ * de modo que la ventana de tokens no se vuelve a saturar en cuanto funciona
+ * una llamada. Estado por instancia serverless.
+ */
+let paceMs = 0;
+let nextCallAt = 0;
+
+export function nextPaceMs(
+  current: number,
+  opts: { retryAfterSeconds?: number; baseMs: number },
+): number {
+  if (opts.retryAfterSeconds !== undefined) {
+    return Math.max(
+      opts.retryAfterSeconds * 1000,
+      Math.min(current * 1.5, 60_000),
+      20_000,
+      opts.baseMs,
+    );
+  }
+  return Math.max(current * 0.5, opts.baseMs);
+}
+
+/** Estado del ritmo para mostrarlo en la UI (status de IA). */
+export function getPacingInfo(): {
+  paceSeconds: number;
+  nextCallInSeconds: number;
+} {
+  return {
+    paceSeconds: Math.round(paceMs / 1000),
+    nextCallInSeconds: Math.max(0, Math.ceil((nextCallAt - Date.now()) / 1000)),
+  };
+}
+
+type RateLimitHook = (retryAfterSeconds: number) => void;
+
+/** Hook global: la ruta advance lo fija por ejecución (serializadas por el
+ * cerrojo) para registrar los 429 en el timeline de la ejecución. */
+let rateLimitHook: RateLimitHook | null = null;
+
+export function setRateLimitHook(hook: RateLimitHook | null): void {
+  rateLimitHook = hook;
+}
+
 /**
  * Segundos que el proveedor pide esperar antes de reintentar (429):
  * cabecera Retry-After o texto «try again in X s» del cuerpo (Groq).
@@ -45,6 +95,7 @@ export class OpenAiCompatibleClient {
     private readonly model: string,
     private readonly apiKey: string,
     private readonly fetchImpl: FetchLike = fetch,
+    private readonly minIntervalSeconds: number = 0,
   ) {
     this.url = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
   }
@@ -105,16 +156,32 @@ export class OpenAiCompatibleClient {
     };
   }
 
-  private post(payload: Record<string, unknown>): Promise<Response> {
+  private async post(payload: Record<string, unknown>): Promise<Response> {
+    const wait = nextCallAt - Date.now();
+    if (wait > 0) await sleep(wait);
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
     if (this.apiKey) headers.Authorization = `Bearer ${this.apiKey}`;
-    return this.fetchImpl(this.url, {
+    const response = await this.fetchImpl(this.url, {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
+
+    const base = this.minIntervalSeconds * 1000;
+    if (response.status === 429) {
+      const body = await response.clone().text().catch(() => "");
+      const retryAfter = parseRetryAfter(response, body) ?? 20;
+      rateLimitHook?.(retryAfter);
+      paceMs = nextPaceMs(paceMs, { retryAfterSeconds: retryAfter, baseMs: base });
+    } else {
+      paceMs = nextPaceMs(paceMs, { baseMs: base });
+    }
+    if (paceMs > 0) nextCallAt = Date.now() + paceMs;
+
+    return response;
   }
 }

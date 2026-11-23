@@ -12,6 +12,7 @@ interface ConfigResponse {
     llm_api_base_url: string;
     llm_api_model: string;
     llm_api_key: string;
+    llm_min_interval_seconds: string;
     tts_enabled: boolean;
   };
   detection: { type: string; label: string } | null;
@@ -37,6 +38,7 @@ export default function ConfiguracionPage() {
     llm_api_base_url: "",
     llm_api_model: "",
     llm_api_key: "",
+    llm_min_interval_seconds: "",
     tts_enabled: true,
   });
   const [saving, setSaving] = useState(false);
@@ -59,6 +61,7 @@ export default function ConfiguracionPage() {
           llm_api_base_url: cfg.settings.llm_api_base_url,
           llm_api_model: cfg.settings.llm_api_model,
           llm_api_key: cfg.settings.llm_api_key,
+          llm_min_interval_seconds: cfg.settings.llm_min_interval_seconds,
           tts_enabled: cfg.settings.tts_enabled,
         });
         setPrompts(pr.prompts);
@@ -222,6 +225,24 @@ export default function ConfiguracionPage() {
               placeholder="••••"
               autoComplete="off"
               className="w-full rounded border border-stone-300 px-3 py-2 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
+            />
+          </label>
+
+          <label className="block text-sm dark:text-stone-200">
+            <span className="mb-1 block font-medium">
+              Pausa mínima entre llamadas, en segundos («modo lento»; 0 o vacío =
+              desactivado. Además, tras un 429 la app frena sola)
+            </span>
+            <input
+              type="number"
+              min={0}
+              max={120}
+              value={form.llm_min_interval_seconds}
+              onChange={(e) =>
+                setForm({ ...form, llm_min_interval_seconds: e.target.value })
+              }
+              placeholder="0"
+              className="w-32 rounded border border-stone-300 px-3 py-2 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
             />
           </label>
         </fieldset>

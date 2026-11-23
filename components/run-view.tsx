@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRunDriver, TERMINAL_STATUSES } from "@/components/use-run-driver";
 import {
   AGENT_DOT,
@@ -18,6 +18,36 @@ export function RunView({ runId }: { runId: string }) {
     useRunDriver(runId);
   const [recoveryMsg, setRecoveryMsg] = useState<string | null>(null);
   const [recovering, setRecovering] = useState(false);
+  const [pacing, setPacing] = useState<{
+    paceSeconds: number;
+    nextCallInSeconds: number;
+  } | null>(null);
+
+  // Estado del modo lento: sondea /api/llm/status mientras la ejecución está
+  // activa para mostrar si estamos esperando por el límite del tier gratuito.
+  useEffect(() => {
+    if (!active) {
+      setPacing(null);
+      return;
+    }
+    let cancelled = false;
+    async function poll() {
+      try {
+        const res = await fetch("/api/llm/status");
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (data.pacing) setPacing(data.pacing);
+      } catch {
+        // sin estado de pacing disponible
+      }
+    }
+    poll();
+    const interval = setInterval(poll, 4000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [active]);
 
   if (notFound) {
     return (
@@ -116,6 +146,19 @@ export function RunView({ runId }: { runId: string }) {
             <p className="mt-3 rounded border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300">
               Otra pestaña está conduciendo esta ejecución; sincronizando
               automáticamente…
+            </p>
+          )}
+          {active && pacing && pacing.nextCallInSeconds > 0 && (
+            <p className="mt-3 rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-200">
+              El proveedor gratuito está al límite de peticiones: próxima
+              llamada en ~{pacing.nextCallInSeconds} s (modo lento automático).
+              La ejecución continúa sola.
+            </p>
+          )}
+          {active && pacing && pacing.nextCallInSeconds === 0 && pacing.paceSeconds > 0 && (
+            <p className="mt-3 text-xs text-stone-500 dark:text-stone-400">
+              Modo lento activo: ~{pacing.paceSeconds} s entre llamadas al
+              proveedor gratuito.
             </p>
           )}
           {paused && !TERMINAL_STATUSES.has(run.status) && (

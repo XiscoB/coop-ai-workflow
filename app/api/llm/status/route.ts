@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStore } from "@/lib/db/store";
 import { getEffectiveConfig } from "@/lib/config";
 import { detectProvider, probeProvider } from "@/lib/llm";
+import { getPacingInfo } from "@/lib/llm/openai-compatible";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,11 @@ export async function GET() {
   const store = getStore();
   const config = await getEffectiveConfig(store);
   const detection = await detectProvider(config);
+
+  const pacing = {
+    minIntervalSeconds: config.llmMinIntervalSeconds,
+    ...getPacingInfo(),
+  };
 
   if (!detection.provider) {
     return NextResponse.json({
@@ -21,6 +27,7 @@ export async function GET() {
           "Sin servicio de IA: arranca Ollama en local o configura una API externa en Configuración.",
       },
       warning: detection.warning,
+      pacing,
     });
   }
 
@@ -33,5 +40,6 @@ export async function GET() {
     },
     probe,
     warning: detection.warning,
+    pacing,
   });
 }

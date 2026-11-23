@@ -26,6 +26,7 @@ export async function GET() {
       llm_api_base_url: config.llmApiBaseUrl,
       llm_api_model: config.llmApiModel,
       llm_api_key: maskKey(config.llmApiKey),
+      llm_min_interval_seconds: String(config.llmMinIntervalSeconds || ""),
       tts_enabled: ttsEnabled,
     },
     detection: detection.provider
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
     "local_llm_model",
     "llm_api_base_url",
     "llm_api_model",
+    "llm_min_interval_seconds",
     "tts_enabled",
   ];
   for (const key of allowed) {

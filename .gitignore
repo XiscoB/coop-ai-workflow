@@ -20,8 +20,8 @@ next-env.d.ts
 # Vercel
 .vercel
 
-# Logs
-logs/
+# Logs (solo la carpeta raíz; NO app/logs ni app/api/logs)
+/logs/
 *.log
 npm-debug.log*
 

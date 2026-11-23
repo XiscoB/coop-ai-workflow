@@ -7,6 +7,7 @@ export interface AppConfig {
   llmApiBaseUrl: string;
   llmApiModel: string;
   llmApiKey: string;
+  llmMinIntervalSeconds: number;
   agentModels: {
     orchestrator?: string;
     develop?: string;
@@ -28,6 +29,7 @@ export function getConfig(): AppConfig {
     llmApiBaseUrl: process.env.LLM_API_BASE_URL ?? "",
     llmApiModel: process.env.LLM_API_MODEL ?? "",
     llmApiKey: process.env.LLM_API_KEY ?? "",
+    llmMinIntervalSeconds: Number(process.env.LLM_MIN_INTERVAL_SECONDS) || 0,
     agentModels: {
       orchestrator: process.env.ORCHESTRATOR_MODEL || undefined,
       develop: process.env.DEVELOP_MODEL || undefined,
@@ -52,6 +54,7 @@ const SETTING_TO_ENV = {
   llm_api_base_url: "llmApiBaseUrl",
   llm_api_model: "llmApiModel",
   llm_api_key: "llmApiKey",
+  llm_min_interval_seconds: "llmMinIntervalSeconds",
 } as const;
 
 /**
@@ -75,6 +78,8 @@ export async function getEffectiveConfig(store?: {
     if (value !== undefined && value !== "") {
       if (prop === "llmMode") {
         config.llmMode = readMode(value);
+      } else if (prop === "llmMinIntervalSeconds") {
+        config.llmMinIntervalSeconds = Number(value) || 0;
       } else {
         config[prop] = value;
       }

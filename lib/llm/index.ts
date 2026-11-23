@@ -75,6 +75,7 @@ function apiProvider(
     useModel,
     config.llmApiKey,
     fetchImpl,
+    config.llmMinIntervalSeconds,
   );
   return makeProvider(
     "openai_compatible",

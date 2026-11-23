@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStore } from "@/lib/db/store";
 import { advance, isTerminal } from "@/lib/engine/runner";
 import { detectProvider, providerForRole, type AgentRole } from "@/lib/llm";
+import { setRateLimitHook } from "@/lib/llm/openai-compatible";
 import { getEffectiveConfig } from "@/lib/config";
 
 export const runtime = "nodejs";
@@ -58,6 +59,19 @@ export async function POST(_request: Request, { params }: Params) {
   const resolveProvider = (role: AgentRole) =>
     Promise.resolve(providerForRole(detection, role, config));
 
+  // Los 429 del proveedor gratuito se registran en el timeline de la
+  // ejecución (visibilidad del modo lento en la UI).
+  setRateLimitHook((retryAfterSeconds) => {
+    void store
+      .addActivity({
+        runId: id,
+        agent: "system",
+        kind: "status_change",
+        content: `El proveedor gratuito está al límite (rate limit): espera de ~${Math.round(retryAfterSeconds)} s antes de reintentar (modo lento automático).`,
+      })
+      .catch(() => {});
+  });
+
   try {
     const run = await advance({ store, resolveProvider }, id);
 
@@ -68,6 +82,7 @@ export async function POST(_request: Request, { params }: Params) {
 
     return NextResponse.json({ run, tasks, activities });
   } finally {
+    setRateLimitHook(null);
     await store.releaseRunLock(id);
   }
 }
