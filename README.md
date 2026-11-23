@@ -16,7 +16,7 @@ La pantalla muestra en tiempo real qué hace cada agente y en qué estado está 
 - **Next.js** (App Router)
 - **Base de datos gratuita** — ver decisión en `docs/plan-de-entrega.md`
 - **Despliegue en Vercel**
-- **LLM en dos modos**: local (sin coste) o mediante API keys configurables — ver `docs/arquitectura-llm.md`
+- **LLM en dos modos**: local (Ollama) o API compatible con OpenAI (DeepSeek, Kimi, OpenAI…) — ver `docs/arquitectura-llm.md`
 
 ## Desarrollo con Spec Kit
 

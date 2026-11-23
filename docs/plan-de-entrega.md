@@ -9,13 +9,12 @@ Estado: **preparación** (el proyecto aún no se ha empezado; este documento fij
 | Framework | Next.js (App Router, última versión estable) | Requisito del encargo |
 | Despliegue | Vercel | Requisito del encargo; integración nativa con Next.js |
 | Base de datos | **Propuesta: Neon (Postgres serverless)** o Supabase | Plan gratuito, maduro, fácil de conectar desde Vercel. Decisión final al arrancar la fase de spec |
-| LLM | Doble modo: **local** (Ollama / LM Studio) y **API keys** (Anthropic, OpenAI…) | Permite demo sin coste y producción con keys. Detalle en `arquitectura-llm.md` |
+| LLM | Doble modo: **local** (Ollama) y **API compatible con OpenAI** (DeepSeek, Kimi, OpenAI, OpenRouter…) | Patrón ya validado en otro proyecto nuestro; detalle completo en `arquitectura-llm.md` |
 | Estado en pantalla | Streaming (SSE / React Server Components) | Se ve en vivo qué hace cada agente y el estado de cada tarea |
 | Agente de codificación | **Kimi Code** (ver `como-usamos-la-ia.md`) | El encargo pide Claude Code o Codex; usamos Kimi Code y lo explicamos |
 
-> Pendiente: el usuario adjuntará un proyecto anterior con el patrón de
-> configuración de API keys ya resuelto; alinear `arquitectura-llm.md` con ese
-> patrón cuando llegue.
+> El diseño del modo local / API keys (`arquitectura-llm.md`) ya está alineado
+> con el patrón validado en producción de otro proyecto nuestro.
 
 ## Flujo de trabajo (Spec Kit)
 
@@ -52,4 +51,5 @@ Las preguntas exactas se conocerán al entregar. Respuestas previsibles a prepar
 3. **¿Cómo persistís el estado?** → Base de datos gratuita (Neon/Supabase);
    cada tarea y mensaje de agente queda registrado.
 4. **¿Cómo funcionaría sin gastar dinero / en local?** → Modo local con
-   Ollama/LM Studio; modo API keys para producción. Ver `arquitectura-llm.md`.
+   Ollama; modo API externa (cualquier API compatible con OpenAI) para
+   producción. Ver `arquitectura-llm.md`.
